@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>⚽ Piłkarzyki – drabinka</title>
+<style>
+  :root{--bg:#0f1a14;--card:#16261d;--line:#244033;--txt:#e8f3ec;--mut:#8fae9c;--acc:#3ddc84;--warn:#ffb84d;--bad:#ff6b6b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.4 system-ui,Segoe UI,Roboto,sans-serif}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line);background:#0b140f;position:sticky;top:0;z-index:5}
+  h1{margin:0;font-size:20px}
+  nav{display:flex;gap:6px;flex-wrap:wrap}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--txt);padding:7px 14px;border-radius:8px}
+  button:hover{border-color:var(--acc)}
+  button.on,button.pri{background:var(--acc);color:#04210f;border-color:var(--acc);font-weight:600}
+  button.danger{color:var(--bad)}
+  button.sm{padding:3px 9px;font-size:13px}
+  #bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 20px;background:#0b140f;border-bottom:1px solid var(--line);font-size:13px}
+  #bar .st{margin-right:auto}
+  .ok{color:var(--acc)}.warn{color:var(--warn)}
+  main{max-width:1200px;margin:0 auto;padding:18px;display:grid;gap:16px}
+  .grid{display:grid;gap:16px;grid-template-columns:1fr 1.4fr}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto}
+  .card h2{margin:0 0 12px;font-size:16px;color:var(--acc)}
+  input{font:inherit;background:#0c1711;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0}
+  input:focus{outline:2px solid var(--acc);border-color:transparent}
+  input.sc{width:56px;text-align:center;font-weight:700}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row>input{flex:1 1 120px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase}
+  td.l,th.l{text-align:left}
+  tr.first td{background:rgba(61,220,132,.12);font-weight:700}
+  .pos{color:var(--acc)}.neg{color:var(--bad)}
+  .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700}
+  .b-lobby{background:var(--warn);color:#2b1d00}.b-playing{background:var(--acc);color:#04210f}.b-finished{background:#5b6b62;color:#fff}
+  .match{display:grid;grid-template-columns:1fr auto 1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .match .t{overflow:hidden;text-overflow:ellipsis}
+  .match .t.r{text-align:right}
+  .match.done{opacity:.85}
+  .match .w{color:var(--acc);font-weight:700}
+  .sep{color:var(--mut)}
+  .muted{color:var(--mut)}
+  .team{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+  .progress{height:6px;background:#0c1711;border-radius:9px;overflow:hidden;margin:8px 0}
+  .progress>div{height:100%;background:var(--acc)}
+  .hist{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
+  .chip{display:inline-flex;gap:6px;align-items:center;padding:3px 10px;border-radius:99px;border:1px solid var(--line);background:#0c1711;font-size:13px}
+  .chip.in{border-color:var(--acc)}
+  .chip button{border:0;background:none;color:var(--bad);padding:0;cursor:pointer;font-size:13px}
+  label{display:block;color:var(--mut);font-size:13px;margin:8px 0 4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚽ Piłkarzyki – drabinka</h1>
+  <nav>
+    <button id="n-current" onclick="go('current')">Aktualny turniej</button>
+    <button id="n-history" onclick="go('history')">Historia</button>
+    <button id="n-new" class="pri" onclick="go('new')">+ Nowa drabinka</button>
+  </nav>
+</header>
+<div id="bar"></div>
+<main id="app">Ładowanie…</main>
+<input type="file" id="imp" accept=".json,application/json" hidden>
+
+<script>
+const KEY = 'pilkarzyki_db_v1';
+const FS_OK = 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
+let db = { currentId: null, tournaments: [] };
+let view = 'current';
+let fh = null;            // uchwyt do pliku db.json
+let fileState = 'none';   // none | ok | need-permission | error
+let writeChain = Promise.resolve();
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const getT = id => db.tournaments.find(t => t.id === id);
+const cur = () => getT(db.currentId);
+const statusTxt = {lobby:'Lobby', playing:'W grze', finished:'Zakończony'};
+
+// ================= BAZA (localStorage + plik db.json) =================
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('pilkarzyki', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+async function idbGet(k) { const d = await idb(); return new Promise((res, rej) => { const q = d.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+async function idbSet(k, v) { const d = await idb(); return new Promise((res, rej) => { const q = d.transaction('kv', 'readwrite').objectStore('kv').put(v, k); q.onsuccess = () => res(); q.onerror = () => rej(q.error); }); }
+
+function validDb(d) { return d && Array.isArray(d.tournaments); }
+
+function writeFile() {
+  if (!fh || fileState !== 'ok') return Promise.resolve();
+  writeChain = writeChain.then(async () => {
+    try {
+      const w = await fh.createWritable();
+      await w.write(JSON.stringify(db, null, 2));
+      await w.close();
+    } catch (e) { fileState = 'error'; renderBar(); }
+  });
+  return writeChain;
+}
+async function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
+  await writeFile();
+}
+async function readFromFile() {
+  const txt = await (await fh.getFile()).text();
+  if (txt.trim()) {
+    const d = JSON.parse(txt);
+    if (!validDb(d)) throw new Error('To nie wygląda na plik bazy piłkarzyków');
+    db = d;
+    fileState = 'ok';
+  } else {
+    fileState = 'ok';
+    await writeFile();     // pusty plik – zapisz to, co mamy
+  }
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
+}
+
+async function pickOpen() {
+  try {
+    const [h] = await showOpenFilePicker({ types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
+    fh = h; await h.requestPermission({ mode: 'readwrite' });
+    await readFromFile(); await idbSet('fh', h).catch(() => {});
+  } catch (e) { if (e.name !== 'AbortError') alert('Nie udało się otworzyć pliku: ' + e.message); }
+  render();
+}
+async function pickCreate() {
+  try {
+    fh = await showSaveFilePicker({ suggestedName: 'db.json', types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
+    fileState = 'ok'; await writeFile(); await idbSet('fh', fh).catch(() => {});
+  } catch (e) { if (e.name !== 'AbortError') alert('Nie udało się utworzyć pliku: ' + e.message); }
+  render();
+}
+async function resumeFile() {
+  try {
+    if (await fh.requestPermission({ mode: 'readwrite' }) === 'granted') await readFromFile();
+  } catch (e) { fileState = 'error'; alert(e.message); }
+  render();
+}
+function exportJson() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }));
+  a.download = 'db.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+$('#imp').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!validDb(d)) throw new Error('Zły format pliku');
+    if (!confirm('Zastąpić obecne dane danymi z pliku?')) return;
+    db = d; await persist(); render();
+  } catch (err) { alert('Import nie powiódł się: ' + err.message); }
+});
+
+function renderBar() {
+  let st, btns = '';
+  if (!FS_OK) {
+    st = `<span class="warn">⚠ Ta przeglądarka nie zapisuje do pliku – dane trzymane w pamięci przeglądarki. Używaj Eksport/Import (lub Chrome/Edge).</span>`;
+  } else if (fileState === 'ok') {
+    st = `<span class="ok">💾 Zapis automatyczny do pliku: <b>${esc(fh.name)}</b></span>`;
+    btns = `<button class="sm" onclick="pickOpen()">Zmień plik</button>`;
+  } else if (fileState === 'need-permission') {
+    st = `<span class="warn">⚠ Plik <b>${esc(fh.name)}</b> czeka na zgodę – kliknij, żeby wznowić zapis.</span>`;
+    btns = `<button class="sm pri" onclick="resumeFile()">Wznów zapis do pliku</button>`;
+  } else if (fileState === 'error') {
+    st = `<span class="neg">✕ Błąd zapisu do pliku – dane są bezpieczne w pamięci przeglądarki.</span>`;
+    btns = `<button class="sm pri" onclick="resumeFile()">Spróbuj ponownie</button><button class="sm" onclick="pickCreate()">Nowy plik</button>`;
+  } else {
+    st = `<span class="warn">⚠ Brak pliku bazy – dane są tylko w pamięci przeglądarki.</span>`;
+    btns = `<button class="sm pri" onclick="pickOpen()">Otwórz db.json</button><button class="sm" onclick="pickCreate()">Utwórz nowy db.json</button>`;
+  }
+  $('#bar').innerHTML = `<span class="st">${st}</span>${btns}
+    <button class="sm" onclick="exportJson()">⬇ Eksport JSON</button>
+    <button class="sm" onclick="$('#imp').click()">⬆ Import JSON</button>`;
+}
+
+// ================= LOGIKA (akcje na bazie) =================
+function act(a) {
+  const fail = m => { throw new Error(m); };
+  switch (a.type) {
+    case 'createTournament': {
+      const name = String(a.name || '').trim() || 'Turniej ' + new Date().toLocaleDateString('pl-PL');
+      const t = {
+        id: uid(), name, createdAt: new Date().toISOString(), status: 'lobby',
+        pointsWin: Number.isFinite(parseFloat(a.pointsWin)) ? parseFloat(a.pointsWin) : 3,
+        pointsLoss: Number.isFinite(parseFloat(a.pointsLoss)) ? parseFloat(a.pointsLoss) : 0,
+        teams: [], matches: [], players: []
+      };
+      db.tournaments.push(t); db.currentId = t.id; break;
+    }
+    case 'setCurrent': if (!getT(a.id)) fail('Brak turnieju'); db.currentId = a.id; break;
+    case 'deleteTournament':
+      db.tournaments = db.tournaments.filter(t => t.id !== a.id);
+      if (db.currentId === a.id) db.currentId = null; break;
+    case 'addTeam': {
+      const t = getT(a.tid) || fail('Brak turnieju');
+      const p1 = String(a.p1 || '').trim(), p2 = String(a.p2 || '').trim();
+      if (!p1 || !p2) fail('Podaj obu graczy');
+      const name = String(a.name || '').trim() || `${p1} & ${p2}`;
+      if (t.teams.some(x => x.name.toLowerCase() === name.toLowerCase())) fail('Drużyna o takiej nazwie już istnieje');
+      const team = { id: uid(), name, p1, p2 };
+      pushTeam(t, team); break;
+    }
+    case 'removeTeam': {
+      const t = getT(a.tid) || fail('Brak turnieju');
+      t.teams = t.teams.filter(x => x.id !== a.teamId);
+      t.matches = t.matches.filter(m => m.a !== a.teamId && m.b !== a.teamId);
+      (t.players || []).forEach(p => { if (p.teamId === a.teamId) p.teamId = null; }); break;
+    }
+    case 'setStatus': {
+      const t = getT(a.tid) || fail('Brak turnieju');
+      if (a.status === 'playing' && t.teams.length < 2) fail('Potrzeba minimum 2 drużyn');
+      t.status = a.status; break;
+    }
+    case 'setResult': {
+      const t = getT(a.tid) || fail('Brak turnieju');
+      const m = t.matches.find(x => x.id === a.matchId) || fail('Brak meczu');
+      const sa = parseInt(a.sa, 10), sb = parseInt(a.sb, 10);
+      if (!(sa >= 0) || !(sb >= 0)) fail('Podaj poprawny wynik');
+      if (sa === sb) fail('Remisów nie ma – ktoś musi wygrać');
+      const first = m.sa == null;
+      m.sa = sa; m.sb = sb; if (first || !m.playedAt) m.playedAt = new Date().toISOString();
+      if (first) m.seq = 1 + Math.max(0, ...t.matches.map(x => x.seq || 0));
+      if (t.status === 'lobby') t.status = 'playing'; break;
+    }
+    case 'clearResult': {
+      const t = getT(a.tid) || fail('Brak turnieju');
+      const m = t.matches.find(x => x.id === a.matchId) || fail('Brak meczu');
+      m.sa = m.sb = m.playedAt = m.seq = null; break;
+    }
+    case 'addPlayer': {
+      const t = getT(a.tid) || fail('Brak turnieju'); t.players = t.players || [];
+      const names = String(a.name || '').split(/[,\n;]/).map(x => x.trim()).filter(Boolean);
+      if (!names.length) fail('Podaj imię gracza');
+      for (const n of names) {
+        if (t.players.some(p => p.name.toLowerCase() === n.toLowerCase())) fail(`Gracz "${n}" już jest na liście`);
+        t.players.push({ id: uid(), name: n, teamId: null });
+      }
+      break;
+    }
+    case 'removePlayer': {
+      const t = getT(a.tid) || fail('Brak turnieju');
+      const p = (t.players || []).find(x => x.id === a.playerId) || fail('Brak gracza');
+      if (p.teamId) fail('Gracz jest w drużynie – najpierw usuń drużynę');
+      t.players = t.players.filter(x => x !== p); break;
+    }
+    case 'drawTeams': { const t = getT(a.tid) || fail('Brak turnieju'); drawFromPool(t); break; }
+    case 'redraw': {
+      const t = getT(a.tid) || fail('Brak turnieju');
+      if (played(t) > 0) fail('Są już rozegrane mecze – nie można przelosować');
+      const drawn = new Set(t.teams.filter(x => x.playerIds).map(x => x.id));
+      t.teams = t.teams.filter(x => !drawn.has(x.id));
+      t.matches = t.matches.filter(m => !drawn.has(m.a) && !drawn.has(m.b));
+      (t.players || []).forEach(p => p.teamId = null);
+      drawFromPool(t); break;
+    }
+    case 'renameTeam': {
+      const t = getT(a.tid) || fail('Brak turnieju');
+      const team = t.teams.find(x => x.id === a.teamId) || fail('Brak drużyny');
+      const name = String(a.name || '').trim() || fail('Nazwa nie może być pusta');
+      if (t.teams.some(x => x !== team && x.name.toLowerCase() === name.toLowerCase())) fail('Drużyna o takiej nazwie już istnieje');
+      team.name = name; break;
+    }
+    case 'reshuffle': { const t = getT(a.tid) || fail('Brak turnieju'); break; }
+    default: fail('Nieznana akcja');
+  }
+  const tt = a.tid && getT(a.tid); if (tt) ensureQueue(tt, a.type === 'reshuffle');
+}
+
+// ================= KOLEJKA MECZÓW (losowa, ta sama drużyna nie gra 2x pod rząd) =================
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const shares = (set, m) => !!set && (set.has(m.a) || set.has(m.b));
+const teamsSet = m => new Set([m.a, m.b]);
+
+// dokładne szukanie układu BEZ powtórzeń (losowy DFS z przycinaniem)
+function dfsPlan(unplayed, prev) {
+  let nodes = 0; const BUDGET = 15000;
+  const cnt = {}; unplayed.forEach(m => { cnt[m.a] = (cnt[m.a] || 0) + 1; cnt[m.b] = (cnt[m.b] || 0) + 1; });
+  const used = new Set(), order = [], pool = shuffle(unplayed.slice());
+  const feasible = (left, p) => { for (const k in cnt) { const c = cnt[k]; if (c && c > ((p && p.has(k)) ? Math.floor(left / 2) : Math.ceil(left / 2))) return false; } return true; };
+  function rec(p) {
+    if (order.length === unplayed.length) return true;
+    if (++nodes > BUDGET) return false;
+    if (!feasible(unplayed.length - order.length, p)) return false;
+    const c = pool.filter(m => !used.has(m.id) && !shares(p, m)).map(m => [m, cnt[m.a] + cnt[m.b] + Math.random() * 1.5]).sort((x, y) => y[1] - x[1]);
+    for (const [m] of c) {
+      used.add(m.id); cnt[m.a]--; cnt[m.b]--; order.push(m.id);
+      if (rec(teamsSet(m))) return true;
+      order.pop(); used.delete(m.id); cnt[m.a]++; cnt[m.b]++;
+      if (nodes > BUDGET) return false;
+    }
+    return false;
+  }
+  return rec(prev) ? order : null;
+}
+// gdy układ bez powtórzeń nie istnieje – losowy układ z jak najmniejszą liczbą powtórzeń
+function greedyPlan(unplayed, prev) {
+  const rem = shuffle(unplayed.slice()), cnt = {};
+  rem.forEach(m => { cnt[m.a] = (cnt[m.a] || 0) + 1; cnt[m.b] = (cnt[m.b] || 0) + 1; });
+  const order = []; let p = prev;
+  while (rem.length) {
+    let c = rem.filter(m => !shares(p, m)); if (!c.length) c = rem.slice();
+    c.sort((x, y) => (cnt[y.a] + cnt[y.b]) - (cnt[x.a] + cnt[x.b]));
+    const pick = c[Math.floor(Math.random() * Math.min(3, c.length))];
+    rem.splice(rem.indexOf(pick), 1); cnt[pick.a]--; cnt[pick.b]--;
+    order.push(pick.id); p = teamsSet(pick);
+  }
+  return order;
+}
+function ensureQueue(t, force) {
+  const mm = new Map(t.matches.map(m => [m.id, m]));
+  const unplayed = t.matches.filter(m => m.sa == null);
+  const live = new Set(unplayed.map(m => m.id));
+  let q = (t.queue || []).filter(id => live.has(id));
+  const inQ = new Set(q);
+  const last = t.matches.filter(m => m.sa != null).sort((a, b) => (b.seq || 0) - (a.seq || 0) || b.playedAt.localeCompare(a.playedAt))[0];
+  const prev = last ? teamsSet(last) : null;
+  const conflicts = ids => { let c = 0, p = prev; for (const id of ids) { const m = mm.get(id); if (shares(p, m)) c++; p = teamsSet(m); } return c; };
+  const plan = () => {
+    for (let i = 0; i < 4; i++) { const d = dfsPlan(unplayed, prev); if (d) return d; }
+    let best = null, bc = 1e9;
+    for (let k = 0; k < 120 && bc > 0; k++) { const o = greedyPlan(unplayed, prev), c = conflicts(o); if (c < bc) { best = o; bc = c; } }
+    return best;
+  };
+  if (!unplayed.length) { t.queue = []; return; }
+  if (force) { t.queue = plan(); return; }
+  // nowe mecze wstawiamy w losowe miejsce, które nie robi „dubla” drużyny
+  for (const m of shuffle(unplayed.filter(m => !inQ.has(m.id)))) {
+    const at = shuffle([...Array(q.length + 1).keys()]).find(i => {
+      const left = i === 0 ? prev : teamsSet(mm.get(q[i - 1]));
+      const right = i < q.length ? mm.get(q[i]) : null;
+      return !shares(left, m) && !(right && (right.a === m.a || right.a === m.b || right.b === m.a || right.b === m.b));
+    });
+    q.splice(at === undefined ? q.length : at, 0, m.id);
+  }
+  // został konflikt (np. zagrano mecz „spoza kolejki”, doszła drużyna) – szukamy lepszego układu
+  const bc = conflicts(q);
+  if (bc > 0) { const cand = plan(); if (cand && conflicts(cand) < bc) q = cand; }
+  t.queue = q;
+}
+
+// ================= DRUŻYNY / GRACZE =================
+function uniqueName(t, base) {
+  let n = base, i = 2;
+  while (t.teams.some(x => x.name.toLowerCase() === n.toLowerCase())) n = `${base} (${i++})`;
+  return n;
+}
+function pushTeam(t, team) {
+  t.teams.forEach(o => t.matches.push({ id: uid(), a: o.id, b: team.id, sa: null, sb: null, playedAt: null }));
+  t.teams.push(team);
+}
+function drawFromPool(t) {
+  const pool = shuffle((t.players || []).filter(p => !p.teamId));
+  if (pool.length < 2) throw new Error('Potrzeba minimum 2 graczy bez drużyny');
+  for (let i = 0; i + 1 < pool.length; i += 2) {
+    const [x, y] = [pool[i], pool[i + 1]];
+    const team = { id: uid(), name: uniqueName(t, `${x.name} & ${y.name}`), p1: x.name, p2: y.name, playerIds: [x.id, y.id] };
+    x.teamId = y.teamId = team.id;
+    pushTeam(t, team);
+  }
+}
+
+async function api(action) {
+  const backup = JSON.stringify(db);
+  try { act(action); } catch (e) { db = JSON.parse(backup); alert(e.message); return false; }
+  render();
+  await persist();
+  return true;
+}
+function go(v) { view = v; render(); }
+
+function standings(t) {
+  const s = {};
+  t.teams.forEach(x => s[x.id] = {team:x, m:0, w:0, l:0, pts:0, gf:0, ga:0});
+  t.matches.forEach(m => {
+    if (m.sa == null) return;
+    const A = s[m.a], B = s[m.b]; if (!A || !B) return;
+    A.m++; B.m++; A.gf += m.sa; A.ga += m.sb; B.gf += m.sb; B.ga += m.sa;
+    const aw = m.sa > m.sb;
+    (aw ? A : B).w++; (aw ? B : A).l++;
+    (aw ? A : B).pts += t.pointsWin; (aw ? B : A).pts += t.pointsLoss;
+  });
+  return Object.values(s).sort((x, y) =>
+    y.pts - x.pts || (y.gf - y.ga) - (x.gf - x.ga) || y.gf - x.gf || x.team.name.localeCompare(y.team.name, 'pl'));
+}
+const tn = (t, id) => (t.teams.find(x => x.id === id) || {name:'?'}).name;
+const played = t => t.matches.filter(m => m.sa != null).length;
+
+// ================= AKCJE UI =================
+async function createT() {
+  const ok = await api({type:'createTournament', name:$('#nn').value, pointsWin:$('#pw').value, pointsLoss:$('#pl').value});
+  if (ok) { view = 'current'; render(); }
+}
+async function addTeam() {
+  const ok = await api({type:'addTeam', tid:db.currentId, p1:$('#p1').value, p2:$('#p2').value, name:$('#tname').value});
+  if (ok) setTimeout(() => $('#p1') && $('#p1').focus(), 0);
+}
+function rmTeam(id) {
+  const t = cur(), n = t.matches.filter(m => (m.a === id || m.b === id) && m.sa != null).length;
+  if (confirm(`Usunąć drużynę "${tn(t, id)}"?` + (n ? `\nZostanie usuniętych ${n} rozegranych meczów tej drużyny.` : ''))) api({type:'removeTeam', tid:t.id, teamId:id});
+}
+function saveMatch(id) {
+  api({type:'setResult', tid:db.currentId, matchId:id, sa:$('#a_' + id).value, sb:$('#b_' + id).value});
+}
+const clearMatch = id => api({type:'clearResult', tid:db.currentId, matchId:id});
+const setStatus = s => api({type:'setStatus', tid:db.currentId, status:s});
+const openT = id => api({type:'setCurrent', id}).then(() => go('current'));
+function delT(id) {
+  const t = getT(id);
+  if (confirm(`Na stałe usunąć "${t.name}" z bazy?`)) api({type:'deleteTournament', id});
+}
+async function addPlayer() {
+  const ok = await api({type:'addPlayer', tid:db.currentId, name:$('#pn').value});
+  if (ok) setTimeout(() => $('#pn') && $('#pn').focus(), 0);
+}
+const rmPlayer = id => api({type:'removePlayer', tid:db.currentId, playerId:id});
+const drawTeams = () => api({type:'drawTeams', tid:db.currentId});
+function redraw() { if (confirm('Rozwiązać wylosowane drużyny i wylosować od nowa?')) api({type:'redraw', tid:db.currentId}); }
+function renameTeam(id) {
+  const t = cur(), n = prompt('Nowa nazwa drużyny:', tn(t, id));
+  if (n !== null) api({type:'renameTeam', tid:t.id, teamId:id, name:n});
+}
+const reshuffle = () => api({type:'reshuffle', tid:db.currentId});
+function onEnter(e, fn) { if (e.key === 'Enter') fn(); }
+
+// ================= WIDOKI =================
+function render() {
+  ['current','history','new'].forEach(v => $('#n-' + v).classList.toggle('on', view === v));
+  renderBar();
+  $('#app').innerHTML = view === 'new' ? vNew() : view === 'history' ? vHistory() : vCurrent();
+}
+
+function vNew() {
+  return `<div class="card" style="max-width:480px">
+    <h2>Nowa drabinka</h2>
+    <p class="muted">Poprzednia drabinka zostanie zapisana w historii.</p>
+    <label>Nazwa</label><input id="nn" style="width:100%" placeholder="np. Piątek w biurze" onkeydown="onEnter(event,createT)">
+    <div class="row" style="margin-top:6px">
+      <div style="flex:1"><label>Punkty za wygraną</label><input id="pw" type="number" value="3" style="width:100%"></div>
+      <div style="flex:1"><label>Punkty za przegraną</label><input id="pl" type="number" value="0" style="width:100%"></div>
+    </div>
+    <p style="margin-top:16px"><button class="pri" onclick="createT()">Utwórz lobby</button></p>
+  </div>`;
+}
+
+function vHistory() {
+  const list = [...db.tournaments].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  if (!list.length) return `<div class="card">Brak turniejów. Utwórz pierwszą drabinkę!</div>`;
+  return `<div class="card"><h2>Historia drabinek</h2>` + list.map(t => {
+    const st = standings(t), lead = st[0] && st[0].m ? st[0] : null;
+    return `<div class="hist">
+      <div>
+        <b>${esc(t.name)}</b> <span class="badge b-${t.status}">${statusTxt[t.status]}</span>
+        ${t.id === db.currentId ? '<span class="muted">(otwarty)</span>' : ''}
+        <div class="muted">${new Date(t.createdAt).toLocaleString('pl-PL')} · ${t.teams.length} drużyn · ${played(t)}/${t.matches.length} meczów
+        ${lead ? ` · ${t.status === 'finished' ? '🏆' : 'lider:'} <b style="color:var(--txt)">${esc(lead.team.name)}</b> (${lead.pts} pkt)` : ''}</div>
+      </div>
+      <div class="row"><button class="sm" onclick="openT('${t.id}')">Otwórz</button><button class="sm danger" onclick="delT('${t.id}')">Usuń</button></div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function vCurrent() {
+  const t = cur();
+  if (!t) return `<div class="card">Brak otwartego turnieju. <button class="pri" onclick="go('new')">+ Nowa drabinka</button> albo wybierz z <a href="#" onclick="go('history');return false" style="color:var(--acc)">historii</a>.</div>`;
+  const total = t.matches.length, done = played(t), pct = total ? Math.round(done / total * 100) : 0;
+  const ctrl = t.status === 'lobby' ? `<button class="pri" onclick="setStatus('playing')">▶ Start turnieju</button>`
+    : t.status === 'playing' ? `<button onclick="setStatus('finished')">🏁 Zakończ turniej</button>`
+    : `<button onclick="setStatus('playing')">↩ Wznów</button>`;
+
+  const head = `<div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div><b style="font-size:18px">${esc(t.name)}</b> <span class="badge b-${t.status}">${statusTxt[t.status]}</span>
+      <div class="muted">Wygrana: ${t.pointsWin} pkt · przegrana: ${t.pointsLoss} pkt · remisów brak</div></div>
+      <div>${ctrl}</div>
+    </div>
+    <div class="progress"><div style="width:${pct}%"></div></div>
+    <div class="muted">Rozegrano ${done} z ${total} meczów (${pct}%)</div>
+  </div>`;
+
+  const pl = t.players || [], un = pl.filter(p => !p.teamId), hasDrawn = t.teams.some(x => x.playerIds);
+  const players = `<div class="card">
+    <h2>Gracze – losowanie drużyn (${pl.length})</h2>
+    <div class="row" onkeydown="onEnter(event,addPlayer)"><input id="pn" placeholder="Imię gracza (kilku po przecinku)"><button class="pri" onclick="addPlayer()">+ Dodaj</button></div>
+    <p class="muted" style="font-size:13px">Dodaj samych graczy, a pary zostaną wylosowane. Nazwę drużyny zmienisz przyciskiem ✎.</p>
+    <div class="row" style="gap:6px">${pl.map(p => p.teamId
+      ? `<span class="chip in" title="${esc(tn(t, p.teamId))}">${esc(p.name)}</span>`
+      : `<span class="chip">⏳ ${esc(p.name)} <button onclick="rmPlayer('${p.id}')" title="Usuń gracza">✕</button></span>`).join('') || '<span class="muted">Brak graczy.</span>'}</div>
+    <div class="row" style="margin-top:12px">
+      ${un.length >= 2 ? `<button class="pri" onclick="drawTeams()">🎲 Wylosuj drużyny (${Math.floor(un.length / 2)})</button>` : ''}
+      ${hasDrawn && played(t) === 0 ? `<button onclick="redraw()">🔄 Przelosuj od nowa</button>` : ''}
+    </div>
+    ${un.length === 1 ? '<div class="muted" style="margin-top:8px">Gracz bez pary czeka na kolejnego…</div>' : ''}
+  </div>`;
+
+  const teams = `<div class="card">
+    <h2>Drużyny (${t.teams.length})</h2>
+    <div class="row" onkeydown="onEnter(event,addTeam)">
+      <input id="p1" placeholder="Gracz 1"><input id="p2" placeholder="Gracz 2">
+    </div>
+    <div class="row" style="margin-top:8px" onkeydown="onEnter(event,addTeam)">
+      <input id="tname" placeholder="Nazwa drużyny (opcjonalnie)"><button class="pri" onclick="addTeam()">+ Dodaj</button>
+    </div>
+    <p class="muted" style="font-size:13px">Drużyny można dodawać w każdej chwili – dostaną mecze z całą resztą.</p>
+    ${t.teams.map(x => `<div class="team"><span><b>${esc(x.name)}</b> <span class="muted">${esc(x.p1)} / ${esc(x.p2)}</span></span><span class="row" style="flex-wrap:nowrap;gap:4px"><button class="sm" onclick="renameTeam('${x.id}')" title="Zmień nazwę">✎</button><button class="sm danger" onclick="rmTeam('${x.id}')">✕</button></span></div>`).join('')
+      || '<div class="muted">Brak drużyn – dodaj pierwszą.</div>'}
+  </div>`;
+
+  const st = standings(t);
+  const table = `<div class="card">
+    <h2>Tabela</h2>
+    ${t.teams.length ? `<table>
+      <tr><th>#</th><th class="l">Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th><th>Gz</th><th>Gs</th><th>Bilans</th></tr>
+      ${st.map((r, i) => { const b = r.gf - r.ga; return `<tr class="${i === 0 && r.m ? 'first' : ''}">
+        <td>${i + 1}</td><td class="l">${i === 0 && r.m ? '🏆 ' : ''}${esc(r.team.name)}</td><td>${r.m}</td><td>${r.w}</td><td>${r.l}</td>
+        <td><b>${r.pts}</b></td><td>${r.gf}</td><td>${r.ga}</td><td class="${b > 0 ? 'pos' : b < 0 ? 'neg' : ''}">${b > 0 ? '+' : ''}${b}</td></tr>`; }).join('')}
+    </table>
+    <p class="muted" style="font-size:12px;margin-bottom:0">M mecze · W wygrane · P przegrane · Gz/Gs gole zdobyte/stracone · kolejność: punkty → bilans → gole zdobyte</p>`
+    : '<div class="muted">Tabela pojawi się po dodaniu drużyn.</div>'}
+  </div>`;
+
+  const mrow = m => {
+    const d = m.sa != null;
+    return `<div class="match ${d ? 'done' : ''}">
+      <div class="t r ${d && m.sa > m.sb ? 'w' : ''}">${esc(tn(t, m.a))}</div>
+      <div class="row" style="flex-wrap:nowrap;gap:4px">
+        <input class="sc" type="number" min="0" id="a_${m.id}" value="${d ? m.sa : ''}" onkeydown="onEnter(event,()=>saveMatch('${m.id}'))">
+        <span class="sep">:</span>
+        <input class="sc" type="number" min="0" id="b_${m.id}" value="${d ? m.sb : ''}" onkeydown="onEnter(event,()=>saveMatch('${m.id}'))">
+      </div>
+      <div class="t ${d && m.sb > m.sa ? 'w' : ''}">${esc(tn(t, m.b))}</div>
+      <div class="row" style="flex-wrap:nowrap;gap:4px"><button class="sm pri" onclick="saveMatch('${m.id}')">${d ? 'Zmień' : 'Zapisz'}</button>${d ? `<button class="sm danger" onclick="clearMatch('${m.id}')" title="Wyczyść wynik">↺</button>` : ''}</div>
+    </div>`;
+  };
+  const qi = id => { const i = (t.queue || []).indexOf(id); return i < 0 ? 1e9 : i; };
+  const todo = t.matches.filter(m => m.sa == null).sort((a, b) => qi(a.id) - qi(b.id)), fin = t.matches.filter(m => m.sa != null).sort((a, b) => (b.seq || 0) - (a.seq || 0) || b.playedAt.localeCompare(a.playedAt));
+  const matches = t.status === 'lobby'
+    ? `<div class="card"><h2>Mecze</h2><div class="muted">Po dodaniu drużyn kliknij „Start turnieju” (każdy z każdym: ${total} meczów). Wynik można też wpisać od razu – turniej wystartuje sam.</div>${total ? todo.map(mrow).join('') : ''}</div>`
+    : `<div class="card"><h2>Do rozegrania (${todo.length}) <button class="sm" onclick="reshuffle()" title="Przelosuj kolejkę">🔀</button></h2>${todo.map(mrow).join('') || '<div class="muted">Wszystko rozegrane! 🎉</div>'}</div>
+       <div class="card"><h2>Rozegrane (${fin.length})</h2>${fin.map(mrow).join('') || '<div class="muted">Jeszcze nic.</div>'}</div>`;
+
+  return head + `<div class="grid"><div style="display:grid;gap:16px;align-content:start">${players}${teams}</div><div style="display:grid;gap:16px;align-content:start">${table}</div></div>` + matches;
+}
+
+// ================= START =================
+(async function init() {
+  try { const l = localStorage.getItem(KEY); if (l) { const d = JSON.parse(l); if (validDb(d)) db = d; } } catch (e) {}
+  if (FS_OK) {
+    try {
+      fh = await idbGet('fh');
+      if (fh) {
+        if (await fh.queryPermission({ mode: 'readwrite' }) === 'granted') await readFromFile();
+        else fileState = 'need-permission';
+      }
+    } catch (e) { if (fh) fileState = 'need-permission'; }
+  }
+  db.tournaments.forEach(ensureQueue);
+  render();
+})();
+</script>
+</body>
+</html>

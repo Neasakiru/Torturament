@@ -1,0 +1,304 @@
+{
+  "currentId": "mvlgzyx5jwtz",
+  "tournaments": [
+    {
+      "id": "mvlfq1t0b3sp",
+      "name": "Mackowe",
+      "createdAt": "2026-10-23T20:41:01.860Z",
+      "status": "lobby",
+      "pointsWin": 3,
+      "pointsLoss": 0,
+      "teams": [
+        {
+          "id": "mvlft7pm49s3",
+          "name": "Kinga & Maciek",
+          "p1": "Kinga",
+          "p2": "Maciek",
+          "playerIds": [
+            "mvlfr50j51u9",
+            "mvlfr50jezr1"
+          ]
+        },
+        {
+          "id": "mvlft7pmuiat",
+          "name": "Kuba & Olek",
+          "p1": "Kuba",
+          "p2": "Olek",
+          "playerIds": [
+            "mvlfr50j9y7m",
+            "mvlfr50ju9n9"
+          ]
+        },
+        {
+          "id": "mvlft7pmn7ym",
+          "name": "Daria & Sawil",
+          "p1": "Daria",
+          "p2": "Sawil",
+          "playerIds": [
+            "mvlfr50jwv1r",
+            "mvlfr50ji3ps"
+          ]
+        },
+        {
+          "id": "mvlft7pmbr08",
+          "name": "Julia & Marek",
+          "p1": "Julia",
+          "p2": "Marek",
+          "playerIds": [
+            "mvlfr50jrohx",
+            "mvlfr50j18p3"
+          ]
+        }
+      ],
+      "matches": [
+        {
+          "id": "mvlft7pm27c8",
+          "a": "mvlft7pm49s3",
+          "b": "mvlft7pmuiat",
+          "sa": null,
+          "sb": null,
+          "playedAt": null
+        },
+        {
+          "id": "mvlft7pmfs7q",
+          "a": "mvlft7pm49s3",
+          "b": "mvlft7pmn7ym",
+          "sa": null,
+          "sb": null,
+          "playedAt": null
+        },
+        {
+          "id": "mvlft7pm22qk",
+          "a": "mvlft7pmuiat",
+          "b": "mvlft7pmn7ym",
+          "sa": null,
+          "sb": null,
+          "playedAt": null
+        },
+        {
+          "id": "mvlft7pmiocy",
+          "a": "mvlft7pm49s3",
+          "b": "mvlft7pmbr08",
+          "sa": null,
+          "sb": null,
+          "playedAt": null
+        },
+        {
+          "id": "mvlft7pmmexu",
+          "a": "mvlft7pmuiat",
+          "b": "mvlft7pmbr08",
+          "sa": null,
+          "sb": null,
+          "playedAt": null
+        },
+        {
+          "id": "mvlft7pmmb0l",
+          "a": "mvlft7pmn7ym",
+          "b": "mvlft7pmbr08",
+          "sa": null,
+          "sb": null,
+          "playedAt": null
+        }
+      ],
+      "players": [
+        {
+          "id": "mvlfr50ji3ps",
+          "name": "Sawil",
+          "teamId": "mvlft7pmn7ym"
+        },
+        {
+          "id": "mvlfr50ju9n9",
+          "name": "Olek",
+          "teamId": "mvlft7pmuiat"
+        },
+        {
+          "id": "mvlfr50jwv1r",
+          "name": "Daria",
+          "teamId": "mvlft7pmn7ym"
+        },
+        {
+          "id": "mvlfr50j18p3",
+          "name": "Marek",
+          "teamId": "mvlft7pmbr08"
+        },
+        {
+          "id": "mvlfr50j51u9",
+          "name": "Kinga",
+          "teamId": "mvlft7pm49s3"
+        },
+        {
+          "id": "mvlfr50jrohx",
+          "name": "Julia",
+          "teamId": "mvlft7pmbr08"
+        },
+        {
+          "id": "mvlfr50jezr1",
+          "name": "Maciek",
+          "teamId": "mvlft7pm49s3"
+        },
+        {
+          "id": "mvlfr50j9y7m",
+          "name": "Kuba",
+          "teamId": "mvlft7pmuiat"
+        }
+      ],
+      "queue": [
+        "mvlft7pmmb0l",
+        "mvlft7pm27c8",
+        "mvlft7pmmexu",
+        "mvlft7pmfs7q",
+        "mvlft7pmiocy",
+        "mvlft7pm22qk"
+      ]
+    },
+    {
+      "id": "mvlgzyx5jwtz",
+      "name": "U maciusia",
+      "createdAt": "2026-10-23T21:16:44.297Z",
+      "status": "playing",
+      "pointsWin": 3,
+      "pointsLoss": 0,
+      "teams": [
+        {
+          "id": "mvlhaiu3wdah",
+          "name": "Kuba & Daria",
+          "p1": "Kuba",
+          "p2": "Daria",
+          "playerIds": [
+            "mvlh0wdoqob5",
+            "mvlh0wdorv03"
+          ]
+        },
+        {
+          "id": "mvlhaiu3eo4n",
+          "name": "Maciek & Kacper",
+          "p1": "Maciek",
+          "p2": "Kacper",
+          "playerIds": [
+            "mvlh0wdoyscl",
+            "mvlh0wdorcrz"
+          ]
+        },
+        {
+          "id": "mvlhaiu3gg1v",
+          "name": "Sawik & Julia",
+          "p1": "Sawik",
+          "p2": "Julia",
+          "playerIds": [
+            "mvlh0wdosy6p",
+            "mvlh0wdo2w8x"
+          ]
+        },
+        {
+          "id": "mvlhaiu3cqp8",
+          "name": "Aleksander & Natalia",
+          "p1": "Aleksander",
+          "p2": "Natalia",
+          "playerIds": [
+            "mvlh0wdoi1xr",
+            "mvlh0wdoa9ic"
+          ]
+        }
+      ],
+      "matches": [
+        {
+          "id": "mvlhaiu34r4v",
+          "a": "mvlhaiu3wdah",
+          "b": "mvlhaiu3eo4n",
+          "sa": 10,
+          "sb": 4,
+          "playedAt": "2026-10-23T22:06:40.663Z",
+          "seq": 4
+        },
+        {
+          "id": "mvlhaiu3k0z0",
+          "a": "mvlhaiu3wdah",
+          "b": "mvlhaiu3gg1v",
+          "sa": 10,
+          "sb": 9,
+          "playedAt": "2026-10-23T22:16:13.591Z",
+          "seq": 5
+        },
+        {
+          "id": "mvlhaiu3s33f",
+          "a": "mvlhaiu3eo4n",
+          "b": "mvlhaiu3gg1v",
+          "sa": 3,
+          "sb": 10,
+          "playedAt": "2026-10-23T21:46:09.654Z",
+          "seq": 2
+        },
+        {
+          "id": "mvlhaiu339au",
+          "a": "mvlhaiu3wdah",
+          "b": "mvlhaiu3cqp8",
+          "sa": 5,
+          "sb": 10,
+          "playedAt": "2026-10-23T21:33:51.822Z",
+          "seq": 1
+        },
+        {
+          "id": "mvlhaiu3qm17",
+          "a": "mvlhaiu3eo4n",
+          "b": "mvlhaiu3cqp8",
+          "sa": 0,
+          "sb": 10,
+          "playedAt": "2026-10-23T22:33:11.383Z",
+          "seq": 6
+        },
+        {
+          "id": "mvlhaiu3pr41",
+          "a": "mvlhaiu3gg1v",
+          "b": "mvlhaiu3cqp8",
+          "sa": 4,
+          "sb": 10,
+          "playedAt": "2026-10-23T21:54:15.574Z",
+          "seq": 3
+        }
+      ],
+      "players": [
+        {
+          "id": "mvlh0wdoyscl",
+          "name": "Maciek",
+          "teamId": "mvlhaiu3eo4n"
+        },
+        {
+          "id": "mvlh0wdosy6p",
+          "name": "Sawik",
+          "teamId": "mvlhaiu3gg1v"
+        },
+        {
+          "id": "mvlh0wdoqob5",
+          "name": "Kuba",
+          "teamId": "mvlhaiu3wdah"
+        },
+        {
+          "id": "mvlh0wdorv03",
+          "name": "Daria",
+          "teamId": "mvlhaiu3wdah"
+        },
+        {
+          "id": "mvlh0wdorcrz",
+          "name": "Kacper",
+          "teamId": "mvlhaiu3eo4n"
+        },
+        {
+          "id": "mvlh0wdoi1xr",
+          "name": "Aleksander",
+          "teamId": "mvlhaiu3cqp8"
+        },
+        {
+          "id": "mvlh0wdo2w8x",
+          "name": "Julia",
+          "teamId": "mvlhaiu3gg1v"
+        },
+        {
+          "id": "mvlh0wdoa9ic",
+          "name": "Natalia",
+          "teamId": "mvlhaiu3cqp8"
+        }
+      ],
+      "queue": []
+    }
+  ]
+}
