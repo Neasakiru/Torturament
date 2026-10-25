@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>⚽ Piłkarzyki – drabinka</title>
+<title>Tourturament</title>
+<!-- Favicon (teraz: emotka-trofeum w SVG). Własny plik: odkomentuj linię niżej i usuń tę powyżej. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%233ddc84'/%3E%3Cpath d='M16 12h16v8a8 8 0 0 1-16 0z' fill='%2304210f'/%3E%3Crect x='22' y='28' width='4' height='5' fill='%2304210f'/%3E%3Crect x='17' y='33' width='14' height='3' rx='1.5' fill='%2304210f'/%3E%3C/svg%3E">
+<!-- <link rel="icon" href="logo.png"> -->
 <style>
   :root{--bg:#0f1a14;--card:#16261d;--line:#244033;--txt:#e8f3ec;--mut:#8fae9c;--acc:#3ddc84;--warn:#ffb84d;--bad:#ff6b6b}
   *{box-sizing:border-box}
@@ -48,6 +51,39 @@
   .progress{height:6px;background:#0c1711;border-radius:9px;overflow:hidden;margin:8px 0}
   .progress>div{height:100%;background:var(--acc)}
   .hist{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
+  select{font:inherit;background:#0c1711;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+  .row>input.sc{flex:0 0 56px}
+  .modes.three{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:700px){.modes.three{grid-template-columns:1fr}}
+  .series{font-size:18px;font-weight:800;min-width:70px;text-align:center}
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:100;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+  .toast{pointer-events:auto;cursor:pointer;background:#3a1717;border:1px solid var(--bad);color:#ffd7d7;padding:10px 16px;border-radius:10px;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .toast.ok{background:#0f2e1c;border-color:var(--acc);color:var(--txt)}
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--txt)}
+  .logo-svg,.logo-img{height:40px;width:auto;display:block;flex:none}
+  .brand-name{font-size:22px;font-weight:800;letter-spacing:.3px}
+  .modes{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+  @media(max-width:600px){.modes{grid-template-columns:1fr}}
+  .mode{display:flex;gap:10px;align-items:flex-start;margin:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:#0c1711;cursor:pointer;color:var(--txt);font-size:15px}
+  .mode:has(input:checked){border-color:var(--acc);background:rgba(61,220,132,.1)}
+  .mode input{margin-top:4px;accent-color:var(--acc)}
+  .mode span{display:block;color:var(--mut);font-size:13px;margin-top:2px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .modal[hidden]{display:none}
+  .mbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;width:min(460px,100%);max-height:85vh;overflow:auto}
+  .mbox h2{margin:0 0 12px;font-size:17px;color:var(--acc)}
+  .bracket{display:flex;gap:18px;overflow-x:auto;padding-bottom:6px}
+  .bcol{display:flex;flex-direction:column;min-width:190px;flex:1}
+  .bt{color:var(--mut);font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:8px;text-align:center}
+  .bcells{display:flex;flex-direction:column;justify-content:space-around;gap:10px;flex:1}
+  .bm{border:1px solid var(--line);border-radius:8px;background:#0c1711;overflow:hidden}
+  .bm .tm{display:flex;justify-content:space-between;gap:8px;padding:6px 10px}
+  .bm .tm+.tm{border-top:1px solid var(--line)}
+  .bm .tm.win{color:var(--acc);font-weight:700;background:rgba(61,220,132,.1)}
+  .bm .tm.tbd{color:var(--mut);font-style:italic}
+  .bm.bye{opacity:.6}
+  .champ{margin-top:10px;padding:10px 14px;border-radius:10px;background:rgba(61,220,132,.15);border:1px solid var(--acc);font-weight:700}
+  .out{opacity:.5;text-decoration:line-through}
   .chip{display:inline-flex;gap:6px;align-items:center;padding:3px 10px;border-radius:99px;border:1px solid var(--line);background:#0c1711;font-size:13px}
   .chip.in{border-color:var(--acc)}
   .chip button{border:0;background:none;color:var(--bad);padding:0;cursor:pointer;font-size:13px}
@@ -56,7 +92,19 @@
 </head>
 <body>
 <header>
-  <h1>⚽ Piłkarzyki – drabinka</h1>
+  <a class="brand" href="#" onclick="go('current');return false">
+    <!-- LOGO: aby wstawić własne logo, usuń blok <svg class="logo-svg">...</svg> poniżej i odkomentuj linię z <img> (plik logo.png lub logo.svg połóż obok index.html). Wysokość logo zmienisz w CSS (klasy .logo-svg i .logo-img). -->
+    <svg class="logo-svg" viewBox="0 0 48 48" role="img" aria-label="Tourturament">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3ddc84"/><stop offset="1" stop-color="#16a35a"/></linearGradient></defs>
+      <rect width="48" height="48" rx="12" fill="url(#lg)"/>
+      <path d="M16 12h16v8a8 8 0 0 1-16 0z" fill="#04210f"/>
+      <path d="M16 15h-4v2a5 5 0 0 0 5 5M32 15h4v2a5 5 0 0 1-5 5" fill="none" stroke="#04210f" stroke-width="2.5" stroke-linecap="round"/>
+      <rect x="22" y="28" width="4" height="5" fill="#04210f"/>
+      <rect x="17" y="33" width="14" height="3" rx="1.5" fill="#04210f"/>
+    </svg>
+    <!-- <img class="logo-img" src="logo.png" alt="Tourturament"> -->
+    <span class="brand-name">Tourturament</span>
+  </a>
   <nav>
     <button id="n-current" onclick="go('current')">Aktualny turniej</button>
     <button id="n-history" onclick="go('history')">Historia</button>
@@ -66,6 +114,9 @@
 <div id="bar"></div>
 <main id="app">Ładowanie…</main>
 <input type="file" id="imp" accept=".json,application/json" hidden>
+<div id="modal" class="modal" hidden onclick="if(event.target===this)closeModal()"><div class="mbox" id="mbox"></div></div>
+<div id="dlg" class="modal" hidden style="z-index:60"><div class="mbox"><div id="dlg-msg" style="white-space:pre-line;margin-bottom:16px"></div><div class="row" style="justify-content:flex-end"><button id="dlg-no">Anuluj</button><button id="dlg-yes" class="pri">OK</button></div></div></div>
+<div id="toast"></div>
 
 <script>
 const KEY = 'pilkarzyki_db_v1';
@@ -82,6 +133,25 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const getT = id => db.tournaments.find(t => t.id === id);
 const cur = () => getT(db.currentId);
 const statusTxt = {lobby:'Lobby', playing:'W grze', finished:'Zakończony'};
+
+// ================= WŁASNE OKNA (zamiast confirm/alert, które przeglądarki potrafią blokować) =================
+function toast(msg, kind) {
+  const box = $('#toast'), d = document.createElement('div');
+  d.className = 'toast' + (kind === 'ok' ? ' ok' : ''); d.textContent = msg;
+  d.onclick = () => d.remove(); box.appendChild(d);
+  setTimeout(() => d.remove(), kind === 'ok' ? 2500 : 5500);
+}
+function askConfirm(msg, yesLabel, danger) {
+  return new Promise(res => {
+    const d = $('#dlg'), y = $('#dlg-yes'), n = $('#dlg-no');
+    $('#dlg-msg').textContent = msg; y.textContent = yesLabel || 'OK'; y.className = danger ? 'danger' : 'pri';
+    d.hidden = false;
+    const done = v => { d.hidden = true; y.onclick = n.onclick = d.onclick = null; document.removeEventListener('keydown', key); res(v); };
+    const key = e => { if (e.key === 'Escape') done(false); };
+    y.onclick = () => done(true); n.onclick = () => done(false); d.onclick = e => { if (e.target === d) done(false); };
+    document.addEventListener('keydown', key); y.focus();
+  });
+}
 
 // ================= BAZA (localStorage + plik db.json) =================
 function idb() {
@@ -130,20 +200,20 @@ async function pickOpen() {
     const [h] = await showOpenFilePicker({ types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
     fh = h; await h.requestPermission({ mode: 'readwrite' });
     await readFromFile(); await idbSet('fh', h).catch(() => {});
-  } catch (e) { if (e.name !== 'AbortError') alert('Nie udało się otworzyć pliku: ' + e.message); }
+  } catch (e) { if (e.name !== 'AbortError') toast('Nie udało się otworzyć pliku: ' + e.message); }
   render();
 }
 async function pickCreate() {
   try {
     fh = await showSaveFilePicker({ suggestedName: 'db.json', types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
     fileState = 'ok'; await writeFile(); await idbSet('fh', fh).catch(() => {});
-  } catch (e) { if (e.name !== 'AbortError') alert('Nie udało się utworzyć pliku: ' + e.message); }
+  } catch (e) { if (e.name !== 'AbortError') toast('Nie udało się utworzyć pliku: ' + e.message); }
   render();
 }
 async function resumeFile() {
   try {
     if (await fh.requestPermission({ mode: 'readwrite' }) === 'granted') await readFromFile();
-  } catch (e) { fileState = 'error'; alert(e.message); }
+  } catch (e) { fileState = 'error'; toast(e.message); }
   render();
 }
 function exportJson() {
@@ -156,9 +226,9 @@ $('#imp').addEventListener('change', async e => {
   try {
     const d = JSON.parse(await f.text());
     if (!validDb(d)) throw new Error('Zły format pliku');
-    if (!confirm('Zastąpić obecne dane danymi z pliku?')) return;
+    if (!(await askConfirm('Zastąpić obecne dane danymi z pliku?', 'Zastąp', true))) return;
     db = d; await persist(); render();
-  } catch (err) { alert('Import nie powiódł się: ' + err.message); }
+  } catch (err) { toast('Import nie powiódł się: ' + err.message); }
 });
 
 function renderBar() {
@@ -193,6 +263,9 @@ function act(a) {
         id: uid(), name, createdAt: new Date().toISOString(), status: 'lobby',
         pointsWin: Number.isFinite(parseFloat(a.pointsWin)) ? parseFloat(a.pointsWin) : 3,
         pointsLoss: Number.isFinite(parseFloat(a.pointsLoss)) ? parseFloat(a.pointsLoss) : 0,
+        mode: a.mode === 'knockout' ? 'knockout' : 'roundrobin',
+        bestOf: [3, 5].includes(parseInt(a.bestOf, 10)) ? parseInt(a.bestOf, 10) : 1,
+        teamSize: Math.min(6, Math.max(1, parseInt(a.teamSize, 10) || 2)),
         teams: [], matches: [], players: []
       };
       db.tournaments.push(t); db.currentId = t.id; break;
@@ -203,48 +276,70 @@ function act(a) {
       if (db.currentId === a.id) db.currentId = null; break;
     case 'addTeam': {
       const t = getT(a.tid) || fail('Brak turnieju');
-      const p1 = String(a.p1 || '').trim(), p2 = String(a.p2 || '').trim();
-      if (!p1 || !p2) fail('Podaj obu graczy');
-      const name = String(a.name || '').trim() || `${p1} & ${p2}`;
+      lockCheck(t);
+      const members = (Array.isArray(a.members) ? a.members : [a.p1, a.p2]).map(x => String(x || '').trim());
+      const need = sizeOf(t);
+      if (members.length !== need || members.some(x => !x)) fail(need === 1 ? 'Podaj imię gracza' : `Podaj wszystkich ${need} graczy drużyny`);
+      const name = String(a.name || '').trim() || members.join(' & ');
       if (t.teams.some(x => x.name.toLowerCase() === name.toLowerCase())) fail('Drużyna o takiej nazwie już istnieje');
-      const team = { id: uid(), name, p1, p2 };
-      pushTeam(t, team); break;
+      pushTeam(t, { id: uid(), name, members }); break;
     }
     case 'removeTeam': {
       const t = getT(a.tid) || fail('Brak turnieju');
+      lockCheck(t);
       t.teams = t.teams.filter(x => x.id !== a.teamId);
       t.matches = t.matches.filter(m => m.a !== a.teamId && m.b !== a.teamId);
       (t.players || []).forEach(p => { if (p.teamId === a.teamId) p.teamId = null; }); break;
     }
     case 'setStatus': {
       const t = getT(a.tid) || fail('Brak turnieju');
+      if (isKO(t)) {
+        if (a.status === 'playing') {
+          if (t.status !== 'lobby') fail('Drabinka już wystartowała');
+          if (t.teams.length < 2) fail('Potrzeba minimum 2 drużyn');
+          t.status = 'playing'; buildBracket(t);
+        } else if (a.status === 'lobby') {
+          if (played(t) > 0) fail('Są już rozegrane mecze – nie można wrócić do lobby');
+          t.matches = []; t.status = 'lobby';
+        } else fail('W drabince turniej kończy się sam po rozegraniu finału');
+        break;
+      }
       if (a.status === 'playing' && t.teams.length < 2) fail('Potrzeba minimum 2 drużyn');
       t.status = a.status; break;
     }
     case 'setResult': {
       const t = getT(a.tid) || fail('Brak turnieju');
       const m = t.matches.find(x => x.id === a.matchId) || fail('Brak meczu');
-      const sa = parseInt(a.sa, 10), sb = parseInt(a.sb, 10);
-      if (!(sa >= 0) || !(sb >= 0)) fail('Podaj poprawny wynik');
-      if (sa === sb) fail('Remisów nie ma – ktoś musi wygrać');
+      let sa, sb, games = null;
+      if (boOf(t) > 1) ({ sa, sb, games } = parseSeries(t, a.games));
+      else {
+        sa = parseInt(a.sa, 10); sb = parseInt(a.sb, 10);
+        if (!(sa >= 0) || !(sb >= 0)) fail('Podaj poprawny wynik');
+        if (sa === sb) fail('Remisów nie ma – ktoś musi wygrać');
+      }
+      if (isKO(t)) {
+        if (!m.a || !m.b || m.bye) fail('Ten mecz nie ma jeszcze obu drużyn');
+        const nx = nextOf(t, m), oldW = winnerOf(m), newW = sa > sb ? m.a : m.b;
+        if (nx && nx.sa != null && oldW && oldW !== newW) fail('Zwycięzca tego meczu już gra dalej – najpierw wyczyść następny mecz');
+      }
       const first = m.sa == null;
-      m.sa = sa; m.sb = sb; if (first || !m.playedAt) m.playedAt = new Date().toISOString();
+      m.sa = sa; m.sb = sb; if (games) m.games = games; else delete m.games;
+      if (first || !m.playedAt) m.playedAt = new Date().toISOString();
       if (first) m.seq = 1 + Math.max(0, ...t.matches.map(x => x.seq || 0));
       if (t.status === 'lobby') t.status = 'playing'; break;
     }
     case 'clearResult': {
       const t = getT(a.tid) || fail('Brak turnieju');
       const m = t.matches.find(x => x.id === a.matchId) || fail('Brak meczu');
-      m.sa = m.sb = m.playedAt = m.seq = null; break;
+      if (isKO(t)) { const nx = nextOf(t, m); if (nx && nx.sa != null) fail('Najpierw wyczyść wynik następnego meczu'); }
+      m.sa = m.sb = m.playedAt = m.seq = null; delete m.games; break;
     }
     case 'addPlayer': {
       const t = getT(a.tid) || fail('Brak turnieju'); t.players = t.players || [];
-      const names = String(a.name || '').split(/[,\n;]/).map(x => x.trim()).filter(Boolean);
-      if (!names.length) fail('Podaj imię gracza');
-      for (const n of names) {
-        if (t.players.some(p => p.name.toLowerCase() === n.toLowerCase())) fail(`Gracz "${n}" już jest na liście`);
-        t.players.push({ id: uid(), name: n, teamId: null });
-      }
+      const n = String(a.name || '').trim();
+      if (!n) fail('Podaj imię gracza');
+      if (t.players.some(p => p.name.toLowerCase() === n.toLowerCase())) fail(`Gracz "${n}" już jest na liście`);
+      t.players.push({ id: uid(), name: n, teamId: null });
       break;
     }
     case 'removePlayer': {
@@ -253,14 +348,17 @@ function act(a) {
       if (p.teamId) fail('Gracz jest w drużynie – najpierw usuń drużynę');
       t.players = t.players.filter(x => x !== p); break;
     }
-    case 'drawTeams': { const t = getT(a.tid) || fail('Brak turnieju'); drawFromPool(t); break; }
+    case 'drawTeams': { const t = getT(a.tid) || fail('Brak turnieju'); lockCheck(t); drawFromPool(t); break; }
     case 'redraw': {
+      // bez `ids` – przelosowuje wszystkie wylosowane drużyny; z `ids` – tylko wskazaną partię
       const t = getT(a.tid) || fail('Brak turnieju');
-      if (played(t) > 0) fail('Są już rozegrane mecze – nie można przelosować');
-      const drawn = new Set(t.teams.filter(x => x.playerIds).map(x => x.id));
+      lockCheck(t);
+      const only = Array.isArray(a.ids) ? new Set(a.ids) : null;
+      const drawn = new Set(t.teams.filter(x => x.playerIds && (!only || only.has(x.id))).map(x => x.id));
+      if (t.matches.some(m => (drawn.has(m.a) || drawn.has(m.b)) && m.sa != null)) fail('Te drużyny mają już rozegrane mecze – nie można ich przelosować');
       t.teams = t.teams.filter(x => !drawn.has(x.id));
       t.matches = t.matches.filter(m => !drawn.has(m.a) && !drawn.has(m.b));
-      (t.players || []).forEach(p => p.teamId = null);
+      (t.players || []).forEach(p => { if (drawn.has(p.teamId)) p.teamId = null; });
       drawFromPool(t); break;
     }
     case 'renameTeam': {
@@ -270,10 +368,23 @@ function act(a) {
       if (t.teams.some(x => x !== team && x.name.toLowerCase() === name.toLowerCase())) fail('Drużyna o takiej nazwie już istnieje');
       team.name = name; break;
     }
+    case 'renameTeams': {
+      const t = getT(a.tid) || fail('Brak turnieju');
+      const fin = new Map(t.teams.map(x => [x.id, x.name]));
+      for (const [id, nm] of Object.entries(a.names || {})) {
+        if (!fin.has(id)) continue;
+        const name = String(nm || '').trim(); if (!name) fail('Nazwa nie może być pusta');
+        fin.set(id, name);
+      }
+      const seen = new Set();
+      for (const n of fin.values()) { const k = n.toLowerCase(); if (seen.has(k)) fail(`Nazwa "${n}" się powtarza`); seen.add(k); }
+      t.teams.forEach(x => x.name = fin.get(x.id)); break;
+    }
     case 'reshuffle': { const t = getT(a.tid) || fail('Brak turnieju'); break; }
     default: fail('Nieznana akcja');
   }
-  const tt = a.tid && getT(a.tid); if (tt) ensureQueue(tt, a.type === 'reshuffle');
+  const tt = a.tid && getT(a.tid);
+  if (tt) { if (isKO(tt)) recompute(tt); else ensureQueue(tt, a.type === 'reshuffle'); }
 }
 
 // ================= KOLEJKA MECZÓW (losowa, ta sama drużyna nie gra 2x pod rząd) =================
@@ -348,30 +459,101 @@ function ensureQueue(t, force) {
   t.queue = q;
 }
 
+// ================= DRABINKA PUCHAROWA =================
+const isKO = t => t.mode === 'knockout';
+function lockCheck(t) {
+  if (isKO(t) && t.status !== 'lobby') throw new Error('Drabinka już wystartowała – skład jest zablokowany. Jeśli nie ma jeszcze wyników, wróć do lobby.');
+}
+function winnerOf(m) {
+  if (!m) return null;
+  if (m.bye) return m.a || m.b || null;
+  if (m.sa == null) return null;
+  return m.sa > m.sb ? m.a : m.b;
+}
+const nextOf = (t, m) => t.matches.find(x => x.round === m.round + 1 && x.idx === (m.idx >> 1));
+function seedOrder(p) { let o = [1]; while (o.length < p) { const n = o.length * 2; o = o.flatMap(x => [x, n + 1 - x]); } return o; }
+function buildBracket(t) {
+  const n = t.teams.length; let P = 2; while (P < n) P *= 2;
+  const R = Math.log2(P), seeds = shuffle(t.teams.map(x => x.id)), order = seedOrder(P);
+  const team = k => seeds[k - 1] ?? null, ms = [];
+  for (let r = 1; r <= R; r++) for (let i = 0; i < P / 2 ** r; i++) {
+    const m = { id: uid(), round: r, idx: i, a: null, b: null, sa: null, sb: null, playedAt: null, seq: null, bye: false };
+    if (r === 1) {
+      m.a = team(order[2 * i]); m.b = team(order[2 * i + 1]);
+      if (!m.a && m.b) { m.a = m.b; m.b = null; }
+      m.bye = !!m.a && !m.b;
+    }
+    ms.push(m);
+  }
+  t.matches = ms; t.queue = [];
+}
+function recompute(t) {
+  if (!t.matches.length) return;
+  const get = (r, i) => t.matches.find(x => x.round === r && x.idx === i);
+  for (const m of t.matches) if (m.round > 1) { m.a = winnerOf(get(m.round - 1, 2 * m.idx)); m.b = winnerOf(get(m.round - 1, 2 * m.idx + 1)); }
+  if (t.status !== 'lobby') {
+    const fin = get(Math.max(...t.matches.map(x => x.round)), 0);
+    t.status = fin && fin.sa != null ? 'finished' : 'playing';
+  }
+}
+function roundName(t, r) {
+  const d = Math.max(...t.matches.map(x => x.round)) - r;
+  return d === 0 ? 'Finał' : d === 1 ? 'Półfinał' : d === 2 ? 'Ćwierćfinał' : `1/${2 ** d} finału`;
+}
+// mecze do rozegrania: najpierw niższe rundy, a w obrębie rundy te, w których nie ma drużyny z ostatniego meczu
+function koPlayable(t) {
+  const last = t.matches.filter(m => m.sa != null && !m.bye).sort((a, b) => (b.seq || 0) - (a.seq || 0))[0];
+  const ls = last ? teamsSet(last) : null;
+  return t.matches.filter(m => m.a && m.b && !m.bye && m.sa == null)
+    .sort((x, y) => x.round - y.round || (shares(ls, x) ? 1 : 0) - (shares(ls, y) ? 1 : 0) || x.idx - y.idx);
+}
+
 // ================= DRUŻYNY / GRACZE =================
+const sizeOf = t => t.teamSize || 2;
+const boOf = t => t.bestOf || 1;
+const membersOf = x => x.members || [x.p1, x.p2].filter(Boolean);
+function modeLabel(t) {
+  return (isKO(t) ? 'Drabinka pucharowa' : 'Wszyscy z wszystkimi') + (boOf(t) > 1 ? ` · best of ${boOf(t)}` : '') + ` · drużyny po ${sizeOf(t)}`;
+}
+// seria best of N: lista gier -> wynik serii (kto wygrał ile gier)
+function parseSeries(t, games) {
+  const need = Math.ceil(boOf(t) / 2);
+  if (!Array.isArray(games) || !games.length) throw new Error('Wpisz wyniki gier');
+  let wa = 0, wb = 0; const out = [];
+  games.forEach((g, i) => {
+    if (wa === need || wb === need) throw new Error(`Seria jest już rozstrzygnięta – usuń grę ${i + 1} i kolejne`);
+    const x = parseInt(g.a, 10), y = parseInt(g.b, 10);
+    if (!(x >= 0) || !(y >= 0)) throw new Error(`Gra ${i + 1}: podaj poprawny wynik`);
+    if (x === y) throw new Error(`Gra ${i + 1}: remisów nie ma`);
+    x > y ? wa++ : wb++; out.push({ a: x, b: y });
+  });
+  if (wa < need && wb < need) throw new Error(`Seria niezakończona – ktoś musi wygrać ${need} ${need === 1 ? 'grę' : 'gry'} (jest ${wa}:${wb})`);
+  return { sa: wa, sb: wb, games: out };
+}
+
 function uniqueName(t, base) {
   let n = base, i = 2;
   while (t.teams.some(x => x.name.toLowerCase() === n.toLowerCase())) n = `${base} (${i++})`;
   return n;
 }
 function pushTeam(t, team) {
-  t.teams.forEach(o => t.matches.push({ id: uid(), a: o.id, b: team.id, sa: null, sb: null, playedAt: null }));
+  if (!isKO(t)) t.teams.forEach(o => t.matches.push({ id: uid(), a: o.id, b: team.id, sa: null, sb: null, playedAt: null }));
   t.teams.push(team);
 }
 function drawFromPool(t) {
-  const pool = shuffle((t.players || []).filter(p => !p.teamId));
-  if (pool.length < 2) throw new Error('Potrzeba minimum 2 graczy bez drużyny');
-  for (let i = 0; i + 1 < pool.length; i += 2) {
-    const [x, y] = [pool[i], pool[i + 1]];
-    const team = { id: uid(), name: uniqueName(t, `${x.name} & ${y.name}`), p1: x.name, p2: y.name, playerIds: [x.id, y.id] };
-    x.teamId = y.teamId = team.id;
+  const size = sizeOf(t), pool = shuffle((t.players || []).filter(p => !p.teamId));
+  if (pool.length < size) throw new Error(`Potrzeba minimum ${size} ${size === 1 ? 'gracza' : 'graczy'} bez drużyny`);
+  for (let i = 0; i + size <= pool.length; i += size) {
+    const g = pool.slice(i, i + size);
+    const team = { id: uid(), name: uniqueName(t, g.map(p => p.name).join(' & ')), members: g.map(p => p.name), playerIds: g.map(p => p.id) };
+    g.forEach(p => p.teamId = team.id);
     pushTeam(t, team);
   }
 }
 
 async function api(action) {
   const backup = JSON.stringify(db);
-  try { act(action); } catch (e) { db = JSON.parse(backup); alert(e.message); return false; }
+  try { act(action); } catch (e) { db = JSON.parse(backup); toast(e.message); return false; }
   render();
   await persist();
   return true;
@@ -379,34 +561,41 @@ async function api(action) {
 function go(v) { view = v; render(); }
 
 function standings(t) {
-  const s = {};
-  t.teams.forEach(x => s[x.id] = {team:x, m:0, w:0, l:0, pts:0, gf:0, ga:0});
+  const bo = boOf(t) > 1, s = {};
+  t.teams.forEach(x => s[x.id] = {team:x, m:0, w:0, l:0, pts:0, gf:0, ga:0, sw:0, sl:0});
   t.matches.forEach(m => {
     if (m.sa == null) return;
     const A = s[m.a], B = s[m.b]; if (!A || !B) return;
-    A.m++; B.m++; A.gf += m.sa; A.ga += m.sb; B.gf += m.sb; B.ga += m.sa;
+    let ga_ = m.sa, gb_ = m.sb;                       // bramki (jedna gra) …
+    if (m.games) {                                    // … albo suma bramek ze wszystkich gier serii
+      ga_ = m.games.reduce((q, g) => q + g.a, 0); gb_ = m.games.reduce((q, g) => q + g.b, 0);
+      A.sw += m.sa; A.sl += m.sb; B.sw += m.sb; B.sl += m.sa;
+    }
+    A.m++; B.m++; A.gf += ga_; A.ga += gb_; B.gf += gb_; B.ga += ga_;
     const aw = m.sa > m.sb;
     (aw ? A : B).w++; (aw ? B : A).l++;
     (aw ? A : B).pts += t.pointsWin; (aw ? B : A).pts += t.pointsLoss;
   });
   return Object.values(s).sort((x, y) =>
-    y.pts - x.pts || (y.gf - y.ga) - (x.gf - x.ga) || y.gf - x.gf || x.team.name.localeCompare(y.team.name, 'pl'));
+    y.pts - x.pts || (bo ? (y.sw - y.sl) - (x.sw - x.sl) : 0) || (y.gf - y.ga) - (x.gf - x.ga) || y.gf - x.gf || x.team.name.localeCompare(y.team.name, 'pl'));
 }
 const tn = (t, id) => (t.teams.find(x => x.id === id) || {name:'?'}).name;
 const played = t => t.matches.filter(m => m.sa != null).length;
 
 // ================= AKCJE UI =================
 async function createT() {
-  const ok = await api({type:'createTournament', name:$('#nn').value, pointsWin:$('#pw').value, pointsLoss:$('#pl').value});
+  const ok = await api({type:'createTournament', name:$('#nn').value, mode:document.querySelector('input[name=mode]:checked').value, bestOf:document.querySelector('input[name=fmt]:checked').value, teamSize:$('#ts').value, pointsWin:$('#pw').value, pointsLoss:$('#pl').value});
   if (ok) { view = 'current'; render(); }
 }
 async function addTeam() {
-  const ok = await api({type:'addTeam', tid:db.currentId, p1:$('#p1').value, p2:$('#p2').value, name:$('#tname').value});
-  if (ok) setTimeout(() => $('#p1') && $('#p1').focus(), 0);
+  const t = cur(), members = Array.from({length: sizeOf(t)}, (_, i) => $('#tm' + i).value);
+  const ok = await api({type:'addTeam', tid:t.id, members, name:$('#tname').value});
+  if (ok) setTimeout(() => $('#tm0') && $('#tm0').focus(), 0);
 }
-function rmTeam(id) {
+async function rmTeam(id) {
   const t = cur(), n = t.matches.filter(m => (m.a === id || m.b === id) && m.sa != null).length;
-  if (confirm(`Usunąć drużynę "${tn(t, id)}"?` + (n ? `\nZostanie usuniętych ${n} rozegranych meczów tej drużyny.` : ''))) api({type:'removeTeam', tid:t.id, teamId:id});
+  const msg = `Usunąć drużynę „${tn(t, id)}”?` + (n ? `\nZostanie usuniętych ${n} rozegranych meczów tej drużyny.` : '');
+  if (await askConfirm(msg, 'Usuń', true)) api({type:'removeTeam', tid:t.id, teamId:id});
 }
 function saveMatch(id) {
   api({type:'setResult', tid:db.currentId, matchId:id, sa:$('#a_' + id).value, sb:$('#b_' + id).value});
@@ -414,22 +603,122 @@ function saveMatch(id) {
 const clearMatch = id => api({type:'clearResult', tid:db.currentId, matchId:id});
 const setStatus = s => api({type:'setStatus', tid:db.currentId, status:s});
 const openT = id => api({type:'setCurrent', id}).then(() => go('current'));
-function delT(id) {
+async function delT(id) {
   const t = getT(id);
-  if (confirm(`Na stałe usunąć "${t.name}" z bazy?`)) api({type:'deleteTournament', id});
+  if (await askConfirm(`Na stałe usunąć „${t.name}” z bazy?`, 'Usuń', true)) api({type:'deleteTournament', id});
 }
-async function addPlayer() {
-  const ok = await api({type:'addPlayer', tid:db.currentId, name:$('#pn').value});
-  if (ok) setTimeout(() => $('#pn') && $('#pn').focus(), 0);
+
+// ---- modale ----
+let modalKind = null, modalData = null;
+const playerChips = t => (t.players || []).map(p => p.teamId
+  ? `<span class="chip in" title="${esc(tn(t, p.teamId))}">${esc(p.name)}</span>`
+  : `<span class="chip">⏳ ${esc(p.name)} <button onclick="rmPlayer('${p.id}')" title="Usuń gracza">✕</button></span>`).join('') || '<span class="muted">Jeszcze nikogo nie dodano.</span>';
+function modalHtml() {
+  const t = cur();
+  if (modalKind === 'players') return `<h2>Dodaj gracza</h2>
+    <div class="row"><input id="pm-name" placeholder="Imię gracza" autocomplete="off" onkeydown="onEnter(event,addPlayerModal)"><button class="pri" onclick="addPlayerModal()">+ Dodaj</button></div>
+    <p class="muted" style="font-size:13px">Dodawaj graczy po jednym – okno zostaje otwarte, więc od razu wpiszesz kolejnego. Enter = dodaj.</p>
+    <div id="pm-list" class="row" style="gap:6px"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:14px"><button onclick="closeModal()">Gotowe</button></div>`;
+  if (modalKind === 'rename') {
+    const x = t.teams.find(y => y.id === modalData.id);
+    return `<h2>Zmień nazwę drużyny</h2><div class="muted" style="margin-bottom:8px">Gracze: ${membersOf(x).map(esc).join(' + ')}</div>
+      <input id="rn-name" style="width:100%" value="${esc(x.name)}" onkeydown="onEnter(event,saveRename)">
+      <div class="row" style="justify-content:flex-end;margin-top:14px"><button onclick="closeModal()">Anuluj</button><button class="pri" onclick="saveRename()">Zapisz</button></div>`;
+  }
+  if (modalKind === 'drawn') {
+    const wait = (t.players || []).filter(p => !p.teamId);
+    return `<h2>🎲 Wylosowane drużyny</h2>
+    <p class="muted" style="margin-top:0">Nadaj własne nazwy, zostaw domyślne albo przelosuj, jeśli skład Ci nie pasuje.</p>
+    ${modalData.ids.map(id => { const x = t.teams.find(y => y.id === id); return `<div style="margin:10px 0"><div class="muted" style="font-size:12px">${membersOf(x).map(esc).join(' + ')}</div><input id="dn_${id}" style="width:100%" value="${esc(x.name)}" onkeydown="onEnter(event,saveDrawn)"></div>`; }).join('')}
+    ${wait.length ? `<div class="muted" style="font-size:13px">Czekają na drużynę: ${wait.map(p => esc(p.name)).join(', ')}</div>` : ''}
+    <div class="row" style="justify-content:space-between;margin-top:14px">
+      <button onclick="redrawBatch()">🔄 Przelosuj</button>
+      <span class="row"><button onclick="closeModal()">Zostaw domyślne</button><button class="pri" onclick="saveDrawn()">Zapisz nazwy</button></span>
+    </div>`;
+  }
+  if (modalKind === 'series') {
+    const m = t.matches.find(y => y.id === modalData.id), bo = boOf(t), need = Math.ceil(bo / 2), g = m.games || [];
+    return `<h2>Wynik meczu – best of ${bo}</h2>
+    <div><b>${esc(tn(t, m.a))}</b> <span class="muted">vs</span> <b>${esc(tn(t, m.b))}</b></div>
+    <div class="muted" style="font-size:13px;margin:4px 0 10px">Wygrywa ten, kto weźmie ${need} ${need === 1 ? 'grę' : 'gry'}. Wpisz wynik każdej rozegranej gry (np. 10:7) – pola po rozstrzygnięciu serii wyłączą się same.</div>
+    ${Array.from({length: bo}, (_, i) => `<div class="row" style="margin:6px 0;flex-wrap:nowrap"><span class="muted" style="width:54px">Gra ${i + 1}</span><input class="sc" type="number" min="0" id="g${i}a" value="${g[i] ? g[i].a : ''}" oninput="seriesUpdate()" onkeydown="onEnter(event,saveSeries)"><span class="sep">:</span><input class="sc" type="number" min="0" id="g${i}b" value="${g[i] ? g[i].b : ''}" oninput="seriesUpdate()" onkeydown="onEnter(event,saveSeries)"></div>`).join('')}
+    <div id="series-sum" style="margin-top:10px;font-weight:700"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:14px"><button onclick="closeModal()">Anuluj</button><button class="pri" onclick="saveSeries()">Zapisz</button></div>`;
+  }
+  return '';
+}
+function openModal(kind, data) {
+  modalKind = kind; modalData = data || null;
+  const box = $('#mbox'); box.innerHTML = modalHtml(); $('#modal').hidden = false;
+  if (kind === 'players') updatePlayerList();
+  if (kind === 'series') seriesUpdate();
+  setTimeout(() => { const f = box.querySelector('input'); if (f) { f.focus(); f.select && f.select(); } }, 0);
+}
+function closeModal() { modalKind = null; modalData = null; $('#modal').hidden = true; $('#mbox').innerHTML = ''; }
+function updatePlayerList() { const el = $('#pm-list'); if (el && cur()) el.innerHTML = playerChips(cur()); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && modalKind) closeModal(); });
+
+async function addPlayerModal() {
+  const inp = $('#pm-name');
+  if (await api({type:'addPlayer', tid:db.currentId, name:inp.value})) { inp.value = ''; inp.focus(); }
 }
 const rmPlayer = id => api({type:'removePlayer', tid:db.currentId, playerId:id});
-const drawTeams = () => api({type:'drawTeams', tid:db.currentId});
-function redraw() { if (confirm('Rozwiązać wylosowane drużyny i wylosować od nowa?')) api({type:'redraw', tid:db.currentId}); }
-function renameTeam(id) {
-  const t = cur(), n = prompt('Nowa nazwa drużyny:', tn(t, id));
-  if (n !== null) api({type:'renameTeam', tid:t.id, teamId:id, name:n});
+async function drawTeams() {
+  const before = new Set(cur().teams.map(x => x.id));
+  if (await api({type:'drawTeams', tid:db.currentId})) showDrawn(before);
+}
+async function redraw() {
+  const t = cur();
+  const custom = t.teams.some(x => x.playerIds && x.name !== membersOf(x).join(' & '));
+  if (custom && !(await askConfirm('Wylosujesz drużyny od nowa – własne nazwy drużyn przepadną. Kontynuować?', 'Przelosuj'))) return;
+  const keep = new Set(t.teams.filter(x => !x.playerIds).map(x => x.id));
+  if (await api({type:'redraw', tid:t.id})) showDrawn(keep);
+}
+// „Przelosuj” w oknie wylosowanych drużyn – tylko ta partia, bez pytania
+async function redrawBatch() {
+  const keep = new Set(cur().teams.map(x => x.id).filter(id => !modalData.ids.includes(id)));
+  if (await api({type:'redraw', tid:db.currentId, ids:modalData.ids})) showDrawn(keep);
+}
+function showDrawn(before) {
+  const ids = cur().teams.filter(x => !before.has(x.id)).map(x => x.id);
+  if (ids.length) openModal('drawn', {ids});
+}
+async function saveDrawn() {
+  const names = {}; modalData.ids.forEach(id => names[id] = $('#dn_' + id).value);
+  if (await api({type:'renameTeams', tid:db.currentId, names})) closeModal();
+}
+const renameTeam = id => openModal('rename', {id});
+async function saveRename() {
+  if (await api({type:'renameTeams', tid:db.currentId, names:{[modalData.id]:$('#rn-name').value}})) closeModal();
 }
 const reshuffle = () => api({type:'reshuffle', tid:db.currentId});
+
+// ---- wynik serii (best of 3 / 5) ----
+const openSeries = id => openModal('series', {id});
+function seriesUpdate() {
+  const t = cur(), bo = boOf(t), need = Math.ceil(bo / 2), m = t.matches.find(x => x.id === modalData.id);
+  let wa = 0, wb = 0, done = false;
+  for (let i = 0; i < bo; i++) {
+    const A = $('#g' + i + 'a'), B = $('#g' + i + 'b');
+    A.disabled = B.disabled = done;
+    if (done) { A.value = B.value = ''; continue; }
+    const x = parseInt(A.value, 10), y = parseInt(B.value, 10);
+    if (x >= 0 && y >= 0 && x !== y) { x > y ? wa++ : wb++; if (wa === need || wb === need) done = true; }
+  }
+  $('#series-sum').textContent = `Seria: ${wa} : ${wb}` + (done ? ` – wygrywa ${tn(t, wa > wb ? m.a : m.b)}` : '');
+}
+async function saveSeries() {
+  const t = cur(), games = []; let gap = false;
+  for (let i = 0; i < boOf(t); i++) {
+    const A = $('#g' + i + 'a'), B = $('#g' + i + 'b');
+    if (A.disabled) break;
+    if (A.value === '' && B.value === '') { gap = true; continue; }
+    if (gap) { toast('Wypełniaj gry po kolei – bez pustych w środku'); return; }
+    games.push({a: A.value, b: B.value});
+  }
+  if (await api({type:'setResult', tid:t.id, matchId:modalData.id, games})) closeModal();
+}
 function onEnter(e, fn) { if (e.key === 'Enter') fn(); }
 
 // ================= WIDOKI =================
@@ -437,17 +726,35 @@ function render() {
   ['current','history','new'].forEach(v => $('#n-' + v).classList.toggle('on', view === v));
   renderBar();
   $('#app').innerHTML = view === 'new' ? vNew() : view === 'history' ? vHistory() : vCurrent();
+  if (modalKind === 'players') updatePlayerList();
 }
 
+function modeChanged() {
+  const ko = document.querySelector('input[name=mode]:checked').value === 'knockout';
+  $('#ptsbox').style.display = ko ? 'none' : '';
+}
 function vNew() {
-  return `<div class="card" style="max-width:480px">
+  return `<div class="card" style="max-width:720px">
     <h2>Nowa drabinka</h2>
     <p class="muted">Poprzednia drabinka zostanie zapisana w historii.</p>
     <label>Nazwa</label><input id="nn" style="width:100%" placeholder="np. Piątek w biurze" onkeydown="onEnter(event,createT)">
-    <div class="row" style="margin-top:6px">
+    <label>Tryb turnieju</label>
+    <div class="modes">
+      <label class="mode"><input type="radio" name="mode" value="roundrobin" checked onchange="modeChanged()"><div><b>Wszyscy na wszystkich</b><span>Każda drużyna gra z każdą, liczymy punkty i bilans. Drużyny można dodawać w trakcie.</span></div></label>
+      <label class="mode"><input type="radio" name="mode" value="knockout" onchange="modeChanged()"><div><b>Drabinka pucharowa</b><span>Przegrany odpada. Losowa drabinka, wolne losy przy nieparzystej liczbie drużyn.</span></div></label>
+    </div>
+    <label>Format meczu</label>
+    <div class="modes three">
+      <label class="mode"><input type="radio" name="fmt" value="1" checked><div><b>Jedna gra</b><span>Jeden wynik, np. 10:7.</span></div></label>
+      <label class="mode"><input type="radio" name="fmt" value="3"><div><b>Best of 3</b><span>Do 2 wygranych gier.</span></div></label>
+      <label class="mode"><input type="radio" name="fmt" value="5"><div><b>Best of 5</b><span>Do 3 wygranych gier.</span></div></label>
+    </div>
+    <label>Rozmiar drużyny (graczy w drużynie)</label>
+    <select id="ts">${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${n === 2 ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    <div id="ptsbox"><div class="row" style="margin-top:6px">
       <div style="flex:1"><label>Punkty za wygraną</label><input id="pw" type="number" value="3" style="width:100%"></div>
       <div style="flex:1"><label>Punkty za przegraną</label><input id="pl" type="number" value="0" style="width:100%"></div>
-    </div>
+    </div></div>
     <p style="margin-top:16px"><button class="pri" onclick="createT()">Utwórz lobby</button></p>
   </div>`;
 }
@@ -456,81 +763,131 @@ function vHistory() {
   const list = [...db.tournaments].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   if (!list.length) return `<div class="card">Brak turniejów. Utwórz pierwszą drabinkę!</div>`;
   return `<div class="card"><h2>Historia drabinek</h2>` + list.map(t => {
-    const st = standings(t), lead = st[0] && st[0].m ? st[0] : null;
+    const ko = isKO(t);
+    let sum = '';
+    if (ko) {
+      const fin = t.matches.length ? t.matches.find(m => m.round === Math.max(...t.matches.map(x => x.round))) : null;
+      const w = fin && fin.sa != null ? winnerOf(fin) : null;
+      if (w) sum = ` · 🏆 <b style="color:var(--txt)">${esc(tn(t, w))}</b>`;
+    } else {
+      const st = standings(t), lead = st[0] && st[0].m ? st[0] : null;
+      if (lead) sum = ` · ${t.status === 'finished' ? '🏆' : 'lider:'} <b style="color:var(--txt)">${esc(lead.team.name)}</b> (${lead.pts} pkt)`;
+    }
     return `<div class="hist">
       <div>
         <b>${esc(t.name)}</b> <span class="badge b-${t.status}">${statusTxt[t.status]}</span>
         ${t.id === db.currentId ? '<span class="muted">(otwarty)</span>' : ''}
-        <div class="muted">${new Date(t.createdAt).toLocaleString('pl-PL')} · ${t.teams.length} drużyn · ${played(t)}/${t.matches.length} meczów
-        ${lead ? ` · ${t.status === 'finished' ? '🏆' : 'lider:'} <b style="color:var(--txt)">${esc(lead.team.name)}</b> (${lead.pts} pkt)` : ''}</div>
+        <div class="muted">${modeLabel(t)} · ${new Date(t.createdAt).toLocaleString('pl-PL')} · ${t.teams.length} drużyn · ${played(t)}/${t.matches.filter(m => !m.bye).length} meczów${sum}</div>
       </div>
       <div class="row"><button class="sm" onclick="openT('${t.id}')">Otwórz</button><button class="sm danger" onclick="delT('${t.id}')">Usuń</button></div>
     </div>`;
   }).join('') + `</div>`;
 }
 
+function vBracket(t) {
+  const sc = (m, id) => m.bye ? (id ? 'wolny los' : '') : (m.sa == null ? '' : (id === m.a ? m.sa : m.sb));
+  const cell = (m, id) => {
+    const win = !!id && winnerOf(m) === id && (m.sa != null || m.bye);
+    return `<div class="tm ${win ? 'win' : ''} ${id ? '' : 'tbd'}"><span>${id ? esc(tn(t, id)) : (m.bye ? '—' : 'do ustalenia')}</span><b>${sc(m, id)}</b></div>`;
+  };
+  const R = Math.max(...t.matches.map(m => m.round));
+  let html = '<div class="bracket">';
+  for (let r = 1; r <= R; r++) {
+    const ms = t.matches.filter(m => m.round === r).sort((a, b) => a.idx - b.idx);
+    html += `<div class="bcol"><div class="bt">${roundName(t, r)}</div><div class="bcells">${ms.map(m => `<div class="bm ${m.bye ? 'bye' : ''}">${cell(m, m.a)}${cell(m, m.b)}</div>`).join('')}</div></div>`;
+  }
+  return html + '</div>';
+}
+
 function vCurrent() {
   const t = cur();
   if (!t) return `<div class="card">Brak otwartego turnieju. <button class="pri" onclick="go('new')">+ Nowa drabinka</button> albo wybierz z <a href="#" onclick="go('history');return false" style="color:var(--acc)">historii</a>.</div>`;
-  const total = t.matches.length, done = played(t), pct = total ? Math.round(done / total * 100) : 0;
-  const ctrl = t.status === 'lobby' ? `<button class="pri" onclick="setStatus('playing')">▶ Start turnieju</button>`
+  const ko = isKO(t), locked = ko && t.status !== 'lobby', size = sizeOf(t), bo = boOf(t);
+  const total = t.matches.filter(m => !m.bye).length, done = played(t), pct = total ? Math.round(done / total * 100) : 0;
+  const finalM = ko && t.matches.length ? t.matches.find(m => m.round === Math.max(...t.matches.map(x => x.round))) : null;
+  const champ = finalM && finalM.sa != null ? winnerOf(finalM) : null;
+  const out = new Set();
+  if (ko) t.matches.forEach(m => { if (m.sa != null && !m.bye) out.add(m.sa > m.sb ? m.b : m.a); });
+
+  let ctrl;
+  if (ko) ctrl = t.status === 'lobby' ? `<button class="pri" onclick="setStatus('playing')">▶ Start – wylosuj drabinkę</button>`
+    : (done === 0 ? `<button onclick="setStatus('lobby')">↩ Wróć do lobby</button>` : '');
+  else ctrl = t.status === 'lobby' ? `<button class="pri" onclick="setStatus('playing')">▶ Start turnieju</button>`
     : t.status === 'playing' ? `<button onclick="setStatus('finished')">🏁 Zakończ turniej</button>`
     : `<button onclick="setStatus('playing')">↩ Wznów</button>`;
 
+  const info = (ko ? 'Drabinka pucharowa · przegrany odpada' : `Wszyscy z wszystkimi · wygrana: ${t.pointsWin} pkt · przegrana: ${t.pointsLoss} pkt · remisów brak`)
+    + (bo > 1 ? ` · best of ${bo}` : '') + ` · drużyny po ${size}`;
   const head = `<div class="card">
     <div class="row" style="justify-content:space-between">
       <div><b style="font-size:18px">${esc(t.name)}</b> <span class="badge b-${t.status}">${statusTxt[t.status]}</span>
-      <div class="muted">Wygrana: ${t.pointsWin} pkt · przegrana: ${t.pointsLoss} pkt · remisów brak</div></div>
+      <div class="muted">${info}</div></div>
       <div>${ctrl}</div>
     </div>
     <div class="progress"><div style="width:${pct}%"></div></div>
-    <div class="muted">Rozegrano ${done} z ${total} meczów (${pct}%)</div>
+    <div class="muted">${ko && !t.matches.length ? 'Drabinka zostanie wylosowana po kliknięciu „Start”.' : `Rozegrano ${done} z ${total} meczów (${pct}%)`}</div>
+    ${champ ? `<div class="champ">🏆 Mistrz turnieju: ${esc(tn(t, champ))}</div>` : ''}
   </div>`;
 
-  const pl = t.players || [], un = pl.filter(p => !p.teamId), hasDrawn = t.teams.some(x => x.playerIds);
+  const pl = t.players || [], un = pl.filter(p => !p.teamId);
+  const drawnIds = new Set(t.teams.filter(x => x.playerIds).map(x => x.id));
+  const canRedraw = drawnIds.size > 0 && !t.matches.some(m => m.sa != null && (drawnIds.has(m.a) || drawnIds.has(m.b)));
+  const leftover = un.length % size;
   const players = `<div class="card">
     <h2>Gracze – losowanie drużyn (${pl.length})</h2>
-    <div class="row" onkeydown="onEnter(event,addPlayer)"><input id="pn" placeholder="Imię gracza (kilku po przecinku)"><button class="pri" onclick="addPlayer()">+ Dodaj</button></div>
-    <p class="muted" style="font-size:13px">Dodaj samych graczy, a pary zostaną wylosowane. Nazwę drużyny zmienisz przyciskiem ✎.</p>
-    <div class="row" style="gap:6px">${pl.map(p => p.teamId
-      ? `<span class="chip in" title="${esc(tn(t, p.teamId))}">${esc(p.name)}</span>`
-      : `<span class="chip">⏳ ${esc(p.name)} <button onclick="rmPlayer('${p.id}')" title="Usuń gracza">✕</button></span>`).join('') || '<span class="muted">Brak graczy.</span>'}</div>
-    <div class="row" style="margin-top:12px">
-      ${un.length >= 2 ? `<button class="pri" onclick="drawTeams()">🎲 Wylosuj drużyny (${Math.floor(un.length / 2)})</button>` : ''}
-      ${hasDrawn && played(t) === 0 ? `<button onclick="redraw()">🔄 Przelosuj od nowa</button>` : ''}
+    ${locked ? '' : `<div class="row"><button class="pri" onclick="openModal('players')">+ Dodaj gracza</button></div>`}
+    <p class="muted" style="font-size:13px">Dodaj graczy po jednym, a drużyny po ${size} zostaną wylosowane. Po losowaniu możesz od razu zmienić ich nazwy albo przelosować.</p>
+    <div class="row" style="gap:6px">${locked ? pl.map(p => `<span class="chip in">${esc(p.name)}</span>`).join('') || '<span class="muted">Brak graczy.</span>' : playerChips(t)}</div>
+    ${locked ? '' : `<div class="row" style="margin-top:12px">
+      ${un.length >= size ? `<button class="pri" onclick="drawTeams()">🎲 Wylosuj drużyny (${Math.floor(un.length / size)})</button>` : ''}
+      ${canRedraw ? `<button onclick="redraw()">🔄 Przelosuj od nowa</button>` : ''}
     </div>
-    ${un.length === 1 ? '<div class="muted" style="margin-top:8px">Gracz bez pary czeka na kolejnego…</div>' : ''}
+    ${un.length && un.length < size ? `<div class="muted" style="margin-top:8px">Do pełnej drużyny brakuje ${size - un.length} ${size - un.length === 1 ? 'gracza' : 'graczy'}…</div>`
+      : leftover ? `<div class="muted" style="margin-top:8px">Po losowaniu ${leftover} ${leftover === 1 ? 'gracz zostanie' : 'graczy zostanie'} bez drużyny i poczeka na kolejnych.</div>` : ''}`}
   </div>`;
 
   const teams = `<div class="card">
     <h2>Drużyny (${t.teams.length})</h2>
-    <div class="row" onkeydown="onEnter(event,addTeam)">
-      <input id="p1" placeholder="Gracz 1"><input id="p2" placeholder="Gracz 2">
-    </div>
+    ${locked ? '<p class="muted" style="font-size:13px;margin-top:0">Drabinka wystartowała – skład jest zablokowany (nazwy nadal możesz zmieniać przyciskiem ✎).</p>' : `
+    <div class="row" onkeydown="onEnter(event,addTeam)">${Array.from({length: size}, (_, i) => `<input id="tm${i}" placeholder="Gracz ${i + 1}">`).join('')}</div>
     <div class="row" style="margin-top:8px" onkeydown="onEnter(event,addTeam)">
       <input id="tname" placeholder="Nazwa drużyny (opcjonalnie)"><button class="pri" onclick="addTeam()">+ Dodaj</button>
     </div>
-    <p class="muted" style="font-size:13px">Drużyny można dodawać w każdej chwili – dostaną mecze z całą resztą.</p>
-    ${t.teams.map(x => `<div class="team"><span><b>${esc(x.name)}</b> <span class="muted">${esc(x.p1)} / ${esc(x.p2)}</span></span><span class="row" style="flex-wrap:nowrap;gap:4px"><button class="sm" onclick="renameTeam('${x.id}')" title="Zmień nazwę">✎</button><button class="sm danger" onclick="rmTeam('${x.id}')">✕</button></span></div>`).join('')
+    <p class="muted" style="font-size:13px">${ko ? 'Możesz też dodać gotową drużynę ręcznie. Skład zamyka się po starcie.' : 'Drużyny można dodawać w każdej chwili – dostaną mecze z całą resztą.'}</p>`}
+    ${t.teams.map(x => `<div class="team"><span class="${out.has(x.id) ? 'out' : ''}"><b>${esc(x.name)}</b> <span class="muted">${membersOf(x).map(esc).join(' / ')}</span></span><span class="row" style="flex-wrap:nowrap;gap:4px"><button class="sm" onclick="renameTeam('${x.id}')" title="Zmień nazwę">✎</button>${locked ? '' : `<button class="sm danger" onclick="rmTeam('${x.id}')" title="Usuń drużynę">✕</button>`}</span></div>`).join('')
       || '<div class="muted">Brak drużyn – dodaj pierwszą.</div>'}
   </div>`;
 
-  const st = standings(t);
-  const table = `<div class="card">
+  let right;
+  if (ko) {
+    right = `<div class="card"><h2>Drabinka</h2>${t.matches.length ? vBracket(t) : '<div class="muted">Po kliknięciu „Start” drużyny zostaną losowo rozstawione. Przy nieparzystej liczbie część drużyn dostanie wolny los do kolejnej rundy.</div>'}</div>`;
+  } else {
+    const st = standings(t);
+    right = `<div class="card">
     <h2>Tabela</h2>
     ${t.teams.length ? `<table>
-      <tr><th>#</th><th class="l">Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th><th>Gz</th><th>Gs</th><th>Bilans</th></tr>
+      <tr><th>#</th><th class="l">Drużyna</th><th>M</th><th>W</th><th>P</th><th>Pkt</th>${bo > 1 ? '<th>Gry</th>' : ''}<th>Gz</th><th>Gs</th><th>Bilans</th></tr>
       ${st.map((r, i) => { const b = r.gf - r.ga; return `<tr class="${i === 0 && r.m ? 'first' : ''}">
         <td>${i + 1}</td><td class="l">${i === 0 && r.m ? '🏆 ' : ''}${esc(r.team.name)}</td><td>${r.m}</td><td>${r.w}</td><td>${r.l}</td>
-        <td><b>${r.pts}</b></td><td>${r.gf}</td><td>${r.ga}</td><td class="${b > 0 ? 'pos' : b < 0 ? 'neg' : ''}">${b > 0 ? '+' : ''}${b}</td></tr>`; }).join('')}
+        <td><b>${r.pts}</b></td>${bo > 1 ? `<td>${r.sw}:${r.sl}</td>` : ''}<td>${r.gf}</td><td>${r.ga}</td><td class="${b > 0 ? 'pos' : b < 0 ? 'neg' : ''}">${b > 0 ? '+' : ''}${b}</td></tr>`; }).join('')}
     </table>
-    <p class="muted" style="font-size:12px;margin-bottom:0">M mecze · W wygrane · P przegrane · Gz/Gs gole zdobyte/stracone · kolejność: punkty → bilans → gole zdobyte</p>`
+    <p class="muted" style="font-size:12px;margin-bottom:0">M mecze · W wygrane · P przegrane${bo > 1 ? ' · Gry wygrane:przegrane' : ''} · Gz/Gs ${bo > 1 ? 'bramki zdobyte/stracone we wszystkich grach' : 'gole zdobyte/stracone'} · kolejność: punkty → ${bo > 1 ? 'różnica gier → ' : ''}bilans → gole zdobyte</p>`
     : '<div class="muted">Tabela pojawi się po dodaniu drużyn.</div>'}
   </div>`;
+  }
 
-  const mrow = m => {
+  const mrow = (m, label) => {
     const d = m.sa != null;
-    return `<div class="match ${d ? 'done' : ''}">
+    const lab = label ? `<div class="muted" style="grid-column:1/-1;font-size:11px">${label}</div>` : '';
+    const clr = d ? `<button class="sm danger" onclick="clearMatch('${m.id}')" title="Wyczyść wynik">↺</button>` : '';
+    if (bo > 1) return `<div class="match ${d ? 'done' : ''}">${lab}
+      <div class="t r ${d && m.sa > m.sb ? 'w' : ''}">${esc(tn(t, m.a))}</div>
+      <div class="series">${d ? `${m.sa} : ${m.sb}` : '– : –'}</div>
+      <div class="t ${d && m.sb > m.sa ? 'w' : ''}">${esc(tn(t, m.b))}</div>
+      <div class="row" style="flex-wrap:nowrap;gap:4px"><button class="sm pri" onclick="openSeries('${m.id}')">${d ? 'Zmień' : 'Wpisz wynik'}</button>${clr}</div>
+      ${d && m.games ? `<div class="muted" style="grid-column:1/-1;font-size:12px">Gry: ${m.games.map(g => g.a + ':' + g.b).join(' · ')}</div>` : ''}
+    </div>`;
+    return `<div class="match ${d ? 'done' : ''}">${lab}
       <div class="t r ${d && m.sa > m.sb ? 'w' : ''}">${esc(tn(t, m.a))}</div>
       <div class="row" style="flex-wrap:nowrap;gap:4px">
         <input class="sc" type="number" min="0" id="a_${m.id}" value="${d ? m.sa : ''}" onkeydown="onEnter(event,()=>saveMatch('${m.id}'))">
@@ -538,17 +895,29 @@ function vCurrent() {
         <input class="sc" type="number" min="0" id="b_${m.id}" value="${d ? m.sb : ''}" onkeydown="onEnter(event,()=>saveMatch('${m.id}'))">
       </div>
       <div class="t ${d && m.sb > m.sa ? 'w' : ''}">${esc(tn(t, m.b))}</div>
-      <div class="row" style="flex-wrap:nowrap;gap:4px"><button class="sm pri" onclick="saveMatch('${m.id}')">${d ? 'Zmień' : 'Zapisz'}</button>${d ? `<button class="sm danger" onclick="clearMatch('${m.id}')" title="Wyczyść wynik">↺</button>` : ''}</div>
+      <div class="row" style="flex-wrap:nowrap;gap:4px"><button class="sm pri" onclick="saveMatch('${m.id}')">${d ? 'Zmień' : 'Zapisz'}</button>${clr}</div>
     </div>`;
   };
-  const qi = id => { const i = (t.queue || []).indexOf(id); return i < 0 ? 1e9 : i; };
-  const todo = t.matches.filter(m => m.sa == null).sort((a, b) => qi(a.id) - qi(b.id)), fin = t.matches.filter(m => m.sa != null).sort((a, b) => (b.seq || 0) - (a.seq || 0) || b.playedAt.localeCompare(a.playedAt));
-  const matches = t.status === 'lobby'
-    ? `<div class="card"><h2>Mecze</h2><div class="muted">Po dodaniu drużyn kliknij „Start turnieju” (każdy z każdym: ${total} meczów). Wynik można też wpisać od razu – turniej wystartuje sam.</div>${total ? todo.map(mrow).join('') : ''}</div>`
-    : `<div class="card"><h2>Do rozegrania (${todo.length}) <button class="sm" onclick="reshuffle()" title="Przelosuj kolejkę">🔀</button></h2>${todo.map(mrow).join('') || '<div class="muted">Wszystko rozegrane! 🎉</div>'}</div>
-       <div class="card"><h2>Rozegrane (${fin.length})</h2>${fin.map(mrow).join('') || '<div class="muted">Jeszcze nic.</div>'}</div>`;
+  const finSort = (a, b) => (b.seq || 0) - (a.seq || 0) || (b.playedAt || '').localeCompare(a.playedAt || '');
+  let matches;
+  if (ko) {
+    if (!t.matches.length) matches = '';
+    else {
+      const todo = koPlayable(t), fin = t.matches.filter(m => m.sa != null && !m.bye).sort(finSort);
+      const lab = m => roundName(t, m.round);
+      matches = `<div class="card"><h2>Do rozegrania (${todo.length})</h2>${todo.map(m => mrow(m, lab(m))).join('') || `<div class="muted">${champ ? 'Turniej zakończony! 🎉' : 'Czekamy na wyniki poprzednich meczów.'}</div>`}</div>
+        <div class="card"><h2>Rozegrane (${fin.length})</h2>${fin.map(m => mrow(m, lab(m))).join('') || '<div class="muted">Jeszcze nic.</div>'}</div>`;
+    }
+  } else {
+    const qi = id => { const i = (t.queue || []).indexOf(id); return i < 0 ? 1e9 : i; };
+    const todo = t.matches.filter(m => m.sa == null).sort((a, b) => qi(a.id) - qi(b.id)), fin = t.matches.filter(m => m.sa != null).sort(finSort);
+    matches = t.status === 'lobby'
+      ? `<div class="card"><h2>Mecze</h2><div class="muted">Po dodaniu drużyn kliknij „Start turnieju” (każdy z każdym: ${t.matches.length} meczów). Wynik można też wpisać od razu – turniej wystartuje sam.</div>${t.matches.length ? todo.map(m => mrow(m)).join('') : ''}</div>`
+      : `<div class="card"><h2>Do rozegrania (${todo.length}) <button class="sm" onclick="reshuffle()" title="Przelosuj kolejkę">🔀</button></h2>${todo.map(m => mrow(m)).join('') || '<div class="muted">Wszystko rozegrane! 🎉</div>'}</div>
+       <div class="card"><h2>Rozegrane (${fin.length})</h2>${fin.map(m => mrow(m)).join('') || '<div class="muted">Jeszcze nic.</div>'}</div>`;
+  }
 
-  return head + `<div class="grid"><div style="display:grid;gap:16px;align-content:start">${players}${teams}</div><div style="display:grid;gap:16px;align-content:start">${table}</div></div>` + matches;
+  return head + `<div class="grid"><div style="display:grid;gap:16px;align-content:start">${players}${teams}</div><div style="display:grid;gap:16px;align-content:start">${right}</div></div>` + matches;
 }
 
 // ================= START =================
@@ -563,7 +932,7 @@ function vCurrent() {
       }
     } catch (e) { if (fh) fileState = 'need-permission'; }
   }
-  db.tournaments.forEach(ensureQueue);
+  db.tournaments.forEach(t => { if (!isKO(t)) ensureQueue(t); });
   render();
 })();
 </script>
