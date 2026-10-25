@@ -39,7 +39,3 @@ Przycisk **+ Nowa drabinka**. Poprzednie turnieje zostają w zakładce **Histori
 - Kolejka meczów jest losowa i układana tak, żeby ta sama drużyna nie grała dwa razy pod rząd. Przy 4 drużynach (i mniej) da się to uniknąć tylko częściowo. Przycisk **🔀** przelosuje kolejkę.
 - Tabela sortuje według punktów, potem bilansu (w best of 3/5 najpierw różnicy gier), potem bramek zdobytych.
 - W drabince wyniku nie zmienisz, jeśli zwycięzca zmieniłby się po rozegraniu kolejnych meczów. Najpierw wyczyść następny mecz.
-
-## Własne logo
-
-W `index.html` w nagłówku jest zakomentowana linia z `<img class="logo-img" src="logo.png">`. Odkomentuj ją, usuń blok `<svg class="logo-svg">` powyżej i połóż `logo.png` obok `index.html`. Wysokość logo ustawisz w CSS (`.logo-svg`, `.logo-img`).
